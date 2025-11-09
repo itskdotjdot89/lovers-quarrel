@@ -1,14 +1,25 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import AgeGate from '@/components/AgeGate';
 
 const Index = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
-  );
+  const navigate = useNavigate();
+  const [hasAccepted, setHasAccepted] = useState(false);
+
+  useEffect(() => {
+    const accepted = localStorage.getItem('lq_age_verified');
+    if (accepted === 'true') {
+      navigate('/home');
+    }
+  }, [navigate]);
+
+  const handleAccept = () => {
+    localStorage.setItem('lq_age_verified', 'true');
+    setHasAccepted(true);
+    navigate('/home');
+  };
+
+  return <AgeGate onAccept={handleAccept} />;
 };
 
 export default Index;
