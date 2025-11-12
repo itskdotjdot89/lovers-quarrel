@@ -10,6 +10,9 @@ import Gameplay from "./pages/Gameplay";
 import Favorites from "./pages/Favorites";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
+import Pricing from "./pages/Pricing";
+import ManageSubscription from "./pages/ManageSubscription";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +25,9 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/home" element={<Home />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/subscription" element={<ManageSubscription />} />
           <Route path="/decks" element={<DeckSelection />} />
           <Route path="/play" element={<Gameplay />} />
           <Route path="/favorites" element={<Favorites />} />
