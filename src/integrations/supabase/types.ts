@@ -14,6 +14,74 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_analyses: {
+        Row: {
+          analysis_text: string
+          created_at: string
+          id: string
+          key_themes: string[] | null
+          psychological_insights: string | null
+          response_id: string
+          sentiment: string | null
+        }
+        Insert: {
+          analysis_text: string
+          created_at?: string
+          id?: string
+          key_themes?: string[] | null
+          psychological_insights?: string | null
+          response_id: string
+          sentiment?: string | null
+        }
+        Update: {
+          analysis_text?: string
+          created_at?: string
+          id?: string
+          key_themes?: string[] | null
+          psychological_insights?: string | null
+          response_id?: string
+          sentiment?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_analyses_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "card_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      card_responses: {
+        Row: {
+          audio_url: string | null
+          card_id: string
+          created_at: string
+          id: string
+          response_text: string
+          response_type: string
+          user_id: string
+        }
+        Insert: {
+          audio_url?: string | null
+          card_id: string
+          created_at?: string
+          id?: string
+          response_text: string
+          response_type: string
+          user_id: string
+        }
+        Update: {
+          audio_url?: string | null
+          card_id?: string
+          created_at?: string
+          id?: string
+          response_text?: string
+          response_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
