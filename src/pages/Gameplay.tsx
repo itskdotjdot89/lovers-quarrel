@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, SkipForward, RotateCcw } from 'lucide-react';
 import GameCard from '@/components/GameCard';
+import ResponseDialog from '@/components/ResponseDialog';
+import AIAnalysisDialog from '@/components/AIAnalysisDialog';
 import { SEED_CARDS } from '@/data/seedCards';
 import { Card as CardType, Session, SpiceLevel, DeckMood } from '@/types/game';
 import { shuffleCards, filterCards, loadFavorites, saveFavorites, toggleFavorite } from '@/lib/gameLogic';
@@ -14,6 +16,13 @@ const Gameplay = () => {
   const [shuffledCards, setShuffledCards] = useState<CardType[]>([]);
   const [currentCard, setCurrentCard] = useState<CardType | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [showResponseDialog, setShowResponseDialog] = useState(false);
+  const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
+  const [currentAnalysis, setCurrentAnalysis] = useState<{
+    text: string;
+    sentiment: string;
+    themes: string[];
+  } | null>(null);
 
   useEffect(() => {
     // Load session config
@@ -117,6 +126,15 @@ const Gameplay = () => {
     toast.success('Deck reshuffled');
   };
 
+  const handleAnalyze = () => {
+    setShowResponseDialog(true);
+  };
+
+  const handleAnalysisComplete = (analysis: string, sentiment: string, themes: string[]) => {
+    setCurrentAnalysis({ text: analysis, sentiment, themes });
+    setShowAnalysisDialog(true);
+  };
+
   if (!currentCard || !session) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -158,8 +176,31 @@ const Gameplay = () => {
             isFavorite={favorites.includes(currentCard.id)}
             onChoice={handleChoice}
             onFavorite={handleFavorite}
+            onAnalyze={handleAnalyze}
           />
         </div>
+
+        {/* Response Dialog */}
+        {currentCard && (
+          <ResponseDialog
+            open={showResponseDialog}
+            onOpenChange={setShowResponseDialog}
+            cardId={currentCard.id}
+            questionText={currentCard.text}
+            onAnalysisComplete={handleAnalysisComplete}
+          />
+        )}
+
+        {/* Analysis Dialog */}
+        {currentAnalysis && (
+          <AIAnalysisDialog
+            open={showAnalysisDialog}
+            onOpenChange={setShowAnalysisDialog}
+            analysis={currentAnalysis.text}
+            sentiment={currentAnalysis.sentiment}
+            keyThemes={currentAnalysis.themes}
+          />
+        )}
 
         {/* Controls */}
         <div className="grid grid-cols-2 gap-4 pb-6">
