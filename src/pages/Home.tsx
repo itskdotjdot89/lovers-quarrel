@@ -1,16 +1,50 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Play, Settings, Heart, Sparkles } from 'lucide-react';
+import { Play, Settings, Heart, Sparkles, LogIn, User } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
 const Home = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background p-4 flex flex-col">
       <div className="max-w-2xl mx-auto w-full flex-1 flex flex-col">
         {/* Header */}
-        <div className="text-center py-8">
+        <div className="text-center py-8 relative">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(user ? '/settings' : '/auth')}
+            className="absolute right-0 top-8"
+          >
+            {user ? (
+              <>
+                <User className="w-4 h-4 mr-2" />
+                Profile
+              </>
+            ) : (
+              <>
+                <LogIn className="w-4 h-4 mr-2" />
+                Sign In
+              </>
+            )}
+          </Button>
           <h1 className="font-display text-5xl mb-3 text-glow text-foreground">
             Lovers' Quarrel
           </h1>
