@@ -127,11 +127,7 @@ const ManageSubscription = () => {
   };
 
   const getPlanName = (bundleType: string) => {
-    switch (bundleType) {
-      case 'individual': return 'Individual';
-      case 'couple': return 'Couple Bundle';
-      default: return bundleType;
-    }
+    return bundleType === 'individual' ? 'Premium' : bundleType;
   };
 
   const getStatusColor = (status: string) => {
@@ -221,57 +217,7 @@ const ManageSubscription = () => {
           </CardContent>
         </Card>
 
-        {subscription.bundle_type !== 'individual' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Linked Accounts
-              </CardTitle>
-              <CardDescription>
-                {subscription.linked_users.length + 1} / {maxUsers} accounts used
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {canInvite && (
-                <div className="space-y-3">
-                  {!inviteCode ? (
-                    <Button onClick={generateInviteCode} className="w-full">
-                      Generate Partner Invite
-                    </Button>
-                  ) : (
-                    <div className="space-y-2">
-                      <Label>Invite Link</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          value={`${window.location.origin}/auth?invite=${inviteCode}`}
-                          readOnly
-                          className="font-mono text-sm"
-                        />
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={copyInviteLink}
-                        >
-                          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Share this link with your partner to join your subscription
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {!canInvite && (
-                <p className="text-sm text-muted-foreground">
-                  Maximum number of accounts reached for this plan
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
+        {/* Removed: Linked Accounts section - couples tier deprecated */}
 
         <Card>
           <CardHeader>

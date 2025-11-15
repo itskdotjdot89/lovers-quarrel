@@ -123,7 +123,7 @@ const Home = () => {
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground font-card leading-relaxed">
-                  Heat Ups, Deep Cuts, and Couple Insights powered by AI. 
+                  Heat Ups, Deep Cuts, and Deep Insights powered by AI.
                   <span className="text-crimson-glow font-semibold ml-1">
                     {subscribed ? 'Available now!' : 'Subscribe to unlock'}
                   </span>

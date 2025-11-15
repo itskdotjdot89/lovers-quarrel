@@ -26,38 +26,20 @@ interface PricingPlan {
 const pricingPlans: PricingPlan[] = [
   {
     id: 'individual',
-    name: 'Individual',
+    name: 'Premium',
     icon: <User className="h-6 w-6" />,
     monthlyPrice: 5,
     stripeMonthlyPriceId: 'price_1STYUuLisf4T9XH8vUJvgxrt',
     stripeProductId: 'prod_TQPJuQMoKp9kuV',
-    description: 'For in-person gameplay',
+    description: 'Unlock everything',
     maxUsers: 1,
     features: [
       'All 3 decks (600 cards)',
       'Unlimited AI analyses',
       'Solo & date night modes',
+      'Long-distance mode',
       'Favorites & custom sessions',
       'New cards quarterly'
-    ]
-  },
-  {
-    id: 'couple',
-    name: 'Couple Bundle',
-    icon: <Users className="h-6 w-6" />,
-    monthlyPrice: 8,
-    stripeMonthlyPriceId: 'price_1STYVLLisf4T9XH8Y3xVbLzx',
-    stripeProductId: 'prod_TQPJ0ctEyMaLvZ',
-    description: 'For long-distance joint play',
-    maxUsers: 2,
-    popular: true,
-    features: [
-      'Everything in Individual',
-      '2 accounts included',
-      'Long-distance mode',
-      'Date night mode',
-      'Couple insights',
-      'Save $2/month vs 2 individual plans'
     ]
   }
 ];
@@ -75,21 +57,14 @@ const Pricing = () => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       if (!user) {
-        navigate(`/auth${inviteCode ? `?invite=${inviteCode}` : ''}`);
+        navigate('/auth');
       }
     });
-
-    if (inviteCode) {
-      toast({
-        title: 'Partner Invitation',
-        description: 'Your partner has invited you to join their subscription!'
-      });
-    }
-  }, [navigate, inviteCode, toast]);
+  }, [navigate]);
 
   const handleSubscribe = async (plan: PricingPlan) => {
     if (!user) {
-      navigate(`/auth${inviteCode ? `?invite=${inviteCode}` : ''}`);
+      navigate('/auth');
       return;
     }
 
@@ -145,7 +120,7 @@ const Pricing = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <div className="max-w-md mx-auto">
           {pricingPlans.map((plan) => (
             <Card
               key={plan.id}

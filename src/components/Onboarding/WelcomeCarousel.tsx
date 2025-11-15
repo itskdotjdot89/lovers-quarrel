@@ -31,7 +31,7 @@ const screens = [
     icon: Users,
     title: "Play Your Way",
     subtitle: "In-person or long-distance",
-    description: "Individual plan for passing the device, or Couple Bundle for remote play. You can even play solo to prepare for date night."
+    description: "Perfect for solo play, in-person dates, or long-distance connections. Practice conversation topics on your own time."
   }
 ];
 
