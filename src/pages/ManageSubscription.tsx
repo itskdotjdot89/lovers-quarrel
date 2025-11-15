@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 
 interface Subscription {
   id: string;
-  bundle_type: 'individual' | 'couple' | 'family';
+  bundle_type: 'individual' | 'couple';
   plan_interval: 'monthly' | 'annual';
   status: 'active' | 'canceled' | 'past_due' | 'trialing';
   trial_end: string | null;
@@ -101,11 +101,35 @@ const ManageSubscription = () => {
     });
   };
 
+  const openCustomerPortal = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal');
+      
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        toast({
+          title: 'Opening Stripe Portal',
+          description: 'Manage your subscription and payment methods'
+        });
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to open customer portal'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getPlanName = (bundleType: string) => {
     switch (bundleType) {
       case 'individual': return 'Individual';
       case 'couple': return 'Couple Bundle';
-      case 'family': return 'Family Plan';
       default: return bundleType;
     }
   };
@@ -148,7 +172,7 @@ const ManageSubscription = () => {
     );
   }
 
-  const maxUsers = subscription.bundle_type === 'individual' ? 1 : subscription.bundle_type === 'couple' ? 2 : 4;
+  const maxUsers = subscription.bundle_type === 'individual' ? 1 : 2;
   const canInvite = subscription.linked_users.length < maxUsers - 1;
 
   return (
@@ -257,21 +281,17 @@ const ManageSubscription = () => {
             <Button
               variant="outline"
               className="w-full"
+              onClick={openCustomerPortal}
+              disabled={loading}
+            >
+              Manage Payment & Billing
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
               onClick={() => navigate('/pricing')}
             >
               Change Plan
-            </Button>
-            <Button
-              variant="destructive"
-              className="w-full"
-              onClick={() => {
-                toast({
-                  title: 'Cancel Subscription',
-                  description: 'This feature will be available soon'
-                });
-              }}
-            >
-              Cancel Subscription
             </Button>
           </CardContent>
         </Card>

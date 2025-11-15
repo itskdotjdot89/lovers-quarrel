@@ -2,6 +2,7 @@ export type DeckMood = 'freaky' | 'real_talk' | 'love_drunk';
 export type CardSubtype = 'this_or_that' | 'open_ended' | 'say_sip_strip';
 export type SpiceLevel = 'soft' | 'standard' | 'spicy';
 export type GameMode = 'date_night' | 'party' | 'long_distance' | 'solo';
+export type BundleType = 'individual' | 'couple';
 
 export interface Deck {
   id: DeckMood;

@@ -200,7 +200,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      bundle_type: "individual" | "couple" | "family"
+      bundle_type: "individual" | "couple"
       subscription_status: "active" | "canceled" | "past_due" | "trialing"
     }
     CompositeTypes: {
@@ -329,7 +329,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      bundle_type: ["individual", "couple", "family"],
+      bundle_type: ["individual", "couple"],
       subscription_status: ["active", "canceled", "past_due", "trialing"],
     },
   },

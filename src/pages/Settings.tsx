@@ -2,18 +2,28 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, CreditCard, Check } from 'lucide-react';
 import { SpiceLevel } from '@/types/game';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const Settings = () => {
   const navigate = useNavigate();
   const [intensity, setIntensity] = useState<SpiceLevel>('standard');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { subscribed, loading: subLoading } = useSubscription();
 
   useEffect(() => {
     const stored = localStorage.getItem('lq_default_intensity');
     if (stored) {
       setIntensity(stored as SpiceLevel);
     }
+
+    // Check auth status
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsLoggedIn(!!user);
+    });
   }, []);
 
   const handleIntensityChange = (level: SpiceLevel) => {
@@ -26,6 +36,11 @@ const Settings = () => {
       localStorage.clear();
       navigate('/');
     }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
   };
 
   return (
@@ -46,6 +61,49 @@ const Settings = () => {
         </div>
 
         <div className="space-y-4">
+          {/* Subscription Management */}
+          {isLoggedIn && (
+            <Card className="p-6 bg-card border-2 border-border">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-foreground" />
+                  <h2 className="font-display text-lg text-foreground">
+                    Subscription
+                  </h2>
+                </div>
+                {subscribed && (
+                  <Badge className="bg-green-500">
+                    <Check className="w-3 h-3 mr-1" />
+                    Active
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                {subscribed 
+                  ? 'You have full access to all premium features'
+                  : 'Subscribe to unlock AI insights and all game modes'}
+              </p>
+              <div className="flex gap-2">
+                {subscribed ? (
+                  <Button
+                    onClick={() => navigate('/subscription')}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Manage Subscription
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => navigate('/pricing')}
+                    className="flex-1"
+                  >
+                    View Plans
+                  </Button>
+                )}
+              </div>
+            </Card>
+          )}
+
           {/* Default Intensity */}
           <Card className="p-6 bg-card border-2 border-border">
             <label className="block font-display text-lg mb-4 text-foreground">
@@ -104,18 +162,29 @@ const Settings = () => {
           {/* Data Management */}
           <Card className="p-6 bg-card border-2 border-border">
             <h2 className="font-display text-lg mb-3 text-foreground">
-              Data Management
+              Account Management
             </h2>
-            <Button
-              onClick={handleReset}
-              variant="destructive"
-              className="w-full"
-            >
-              Reset All Data
-            </Button>
-            <p className="text-xs text-muted-foreground font-ui mt-2">
-              This will clear all favorites and preferences
-            </p>
+            <div className="space-y-2">
+              {isLoggedIn && (
+                <Button
+                  onClick={handleSignOut}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Sign Out
+                </Button>
+              )}
+              <Button
+                onClick={handleReset}
+                variant="destructive"
+                className="w-full"
+              >
+                Reset All Data
+              </Button>
+              <p className="text-xs text-muted-foreground font-ui mt-2">
+                This will clear all favorites and preferences
+              </p>
+            </div>
           </Card>
         </div>
       </div>
