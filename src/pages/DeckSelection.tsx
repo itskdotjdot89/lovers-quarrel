@@ -103,9 +103,11 @@ const DeckSelection = () => {
         .single();
 
       if (error || !session) {
+        // Log full error for debugging
+        console.error("Create session failed:", error);
         toast({
           title: "Error",
-          description: "Failed to create session",
+          description: error?.message || "Failed to create session",
           variant: "destructive"
         });
         return;
