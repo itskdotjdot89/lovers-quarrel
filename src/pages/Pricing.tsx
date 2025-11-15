@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -178,7 +178,13 @@ const Pricing = () => {
 
         <div className="text-center mt-8 text-sm text-muted-foreground">
           <p>All plans include a 7-day free trial. No credit card required to start.</p>
-          <p className="mt-2">Cancel anytime from your account settings.</p>
+          <p className="mt-2">
+            Cancel anytime from your{' '}
+            <Link to="/settings" className="text-primary hover:underline">
+              account settings
+            </Link>
+            .
+          </p>
         </div>
       </div>
     </div>
