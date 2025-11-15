@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
@@ -12,13 +12,44 @@ interface MultiplayerResponseInputProps {
   sessionId: string;
   cardId: string;
   onResponseSubmitted: () => void;
+  onStatusChange?: (status: 'idle' | 'typing' | 'recording') => void;
 }
 
-const MultiplayerResponseInput = ({ sessionId, cardId, onResponseSubmitted }: MultiplayerResponseInputProps) => {
+const MultiplayerResponseInput = ({ sessionId, cardId, onResponseSubmitted, onStatusChange }: MultiplayerResponseInputProps) => {
   const [textResponse, setTextResponse] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const { toast } = useToast();
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleTextChange = (text: string) => {
+    setTextResponse(text);
+    
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Update status to typing
+    if (text.length > 0) {
+      onStatusChange?.('typing');
+      
+      // Set timeout to clear typing status after 2 seconds of no typing
+      typingTimeoutRef.current = setTimeout(() => {
+        onStatusChange?.('idle');
+      }, 2000);
+    } else {
+      onStatusChange?.('idle');
+    }
+  };
 
   const handleTextSubmit = async () => {
     if (!textResponse.trim()) {
@@ -52,6 +83,7 @@ const MultiplayerResponseInput = ({ sessionId, cardId, onResponseSubmitted }: Mu
         description: "Your partner can now see your answer"
       });
       
+      onStatusChange?.('idle');
       setTextResponse('');
       onResponseSubmitted();
     } catch (error) {
@@ -66,6 +98,7 @@ const MultiplayerResponseInput = ({ sessionId, cardId, onResponseSubmitted }: Mu
   };
 
   const handleAudioComplete = async (audioBlob: Blob) => {
+    onStatusChange?.('idle');
     setIsSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -129,7 +162,7 @@ const MultiplayerResponseInput = ({ sessionId, cardId, onResponseSubmitted }: Mu
           <Textarea
             placeholder="Share your thoughts..."
             value={textResponse}
-            onChange={(e) => setTextResponse(e.target.value)}
+            onChange={(e) => handleTextChange(e.target.value)}
             className="min-h-[100px] resize-none"
             disabled={isSubmitting}
           />
@@ -156,8 +189,13 @@ const MultiplayerResponseInput = ({ sessionId, cardId, onResponseSubmitted }: Mu
           <div className="flex flex-col items-center gap-4 py-4">
             <SimpleAudioRecorder
               onRecordingComplete={handleAudioComplete}
-              onRecordingStart={() => setIsRecording(true)}
-              onRecordingStop={() => setIsRecording(false)}
+              onRecordingStart={() => {
+                setIsRecording(true);
+                onStatusChange?.('recording');
+              }}
+              onRecordingStop={() => {
+                setIsRecording(false);
+              }}
             />
             <p className="text-sm text-muted-foreground text-center">
               {isRecording ? 'Recording...' : 'Tap to record your voice response'}
