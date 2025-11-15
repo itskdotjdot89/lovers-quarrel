@@ -23,8 +23,12 @@ const Auth = () => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        const fromOnboarding = searchParams.get('from');
         const inviteCode = searchParams.get('invite');
-        if (inviteCode) {
+        
+        if (fromOnboarding === 'onboarding') {
+          navigate('/pricing?from=onboarding');
+        } else if (inviteCode) {
           navigate(`/pricing?invite=${inviteCode}`);
         } else {
           navigate('/home');
@@ -37,8 +41,12 @@ const Auth = () => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        const fromOnboarding = searchParams.get('from');
         const inviteCode = searchParams.get('invite');
-        if (inviteCode) {
+        
+        if (fromOnboarding === 'onboarding') {
+          navigate('/pricing?from=onboarding');
+        } else if (inviteCode) {
           navigate(`/pricing?invite=${inviteCode}`);
         } else {
           navigate('/home');

@@ -7,9 +7,15 @@ const Index = () => {
   const [hasAccepted, setHasAccepted] = useState(false);
 
   useEffect(() => {
-    const accepted = localStorage.getItem('lq_age_verified');
-    if (accepted === 'true') {
+    const onboardingCompleted = localStorage.getItem('lq_onboarding_completed');
+    const ageVerified = localStorage.getItem('lq_age_verified');
+    
+    if (onboardingCompleted === 'true' && ageVerified === 'true') {
       navigate('/home');
+    } else if (onboardingCompleted !== 'true') {
+      navigate('/onboarding');
+    } else {
+      setHasAccepted(false);
     }
   }, [navigate]);
 

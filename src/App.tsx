@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Pricing from "./pages/Pricing";
 import ManageSubscription from "./pages/ManageSubscription";
+import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/home" element={<Home />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/pricing" element={<Pricing />} />
