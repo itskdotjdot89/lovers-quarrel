@@ -78,19 +78,17 @@ const WaitingRoom = ({ sessionCode, sessionId, isHost, onStart, onCancel }: Wait
           </p>
         </div>
 
-        <Card className="p-6 bg-muted/50">
+        <Card 
+          className="p-6 bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
+          onClick={copyCode}
+        >
           <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-2">Session Code</p>
+            <p className="text-sm text-muted-foreground mb-2">Session Code (Click to Copy)</p>
             <div className="flex items-center justify-center gap-2">
               <span className="text-3xl font-bold font-mono tracking-wider">{sessionCode}</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={copyCode}
-                className="h-8 w-8"
-              >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              </Button>
+              <div className="h-8 w-8 flex items-center justify-center">
+                {copied ? <Check className="h-5 w-5 text-primary" /> : <Copy className="h-5 w-5 text-muted-foreground" />}
+              </div>
             </div>
           </div>
         </Card>
