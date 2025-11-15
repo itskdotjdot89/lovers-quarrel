@@ -5,6 +5,8 @@ import { ArrowLeft, SkipForward, Users } from 'lucide-react';
 import GameCard from '@/components/GameCard';
 import ResponseDialog from '@/components/ResponseDialog';
 import AIAnalysisDialog from '@/components/AIAnalysisDialog';
+import MultiplayerResponseInput from '@/components/MultiplayerResponseInput';
+import PartnerResponses from '@/components/PartnerResponses';
 import { SEED_CARDS } from '@/data/seedCards';
 import { Card as CardType } from '@/types/game';
 import { loadFavorites, saveFavorites, toggleFavorite } from '@/lib/gameLogic';
@@ -69,13 +71,42 @@ const Gameplay = () => {
 
     const { data: parts } = await supabase.from('session_participants').select('*').eq('session_id', sessionId);
     if (parts) setParticipants(parts);
+    
+    await loadResponses();
   };
+
+  const loadResponses = async () => {
+    if (!sessionId || !currentCard) return;
+    const { data } = await supabase
+      .from('session_responses')
+      .select('*')
+      .eq('session_id', sessionId)
+      .eq('card_id', currentCard.id)
+      .order('created_at', { ascending: true });
+    if (data) setResponses(data);
+  };
+
+  useEffect(() => {
+    if (sessionId && currentCard) {
+      loadResponses();
+    }
+  }, [sessionId, currentCard]);
 
   const subscribeToSession = () => {
     if (!sessionId) return;
     const channel = supabase.channel(`game_${sessionId}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_sessions', filter: `id=eq.${sessionId}` },
-        () => loadMultiplayerSession())
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'game_sessions', 
+        filter: `id=eq.${sessionId}` 
+      }, () => loadMultiplayerSession())
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'session_responses', 
+        filter: `session_id=eq.${sessionId}` 
+      }, () => loadResponses())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   };
@@ -109,7 +140,44 @@ const Gameplay = () => {
           <div className="text-sm">{currentIndex + 1} / {totalCards}</div>
         </div>
         <div className="flex flex-col items-center">
-          <GameCard card={currentCard} isFavorite={favorites.includes(currentCard.id)} onFavorite={handleFavorite} />
+          <GameCard 
+            card={currentCard} 
+            isFavorite={favorites.includes(currentCard.id)} 
+            onFavorite={handleFavorite}
+            onChoice={currentCard.subtype === 'this_or_that' ? async (choice) => {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (!user || !sessionId) return;
+              await supabase.from('session_responses').insert({
+                session_id: sessionId,
+                card_id: currentCard.id,
+                user_id: user.id,
+                response_type: 'choice',
+                choice: choice
+              });
+              toast.success(`You chose: ${choice === 'A' ? currentCard.choiceA : currentCard.choiceB}`);
+            } : undefined}
+            showResponseInput={sessionId && currentCard.subtype === 'open_ended'}
+            responseInputComponent={
+              sessionId && currentCard.subtype === 'open_ended' ? (
+                <MultiplayerResponseInput
+                  sessionId={sessionId}
+                  cardId={currentCard.id}
+                  onResponseSubmitted={loadResponses}
+                />
+              ) : undefined
+            }
+          />
+          
+          {sessionId && responses.length > 0 && (
+            <div className="mt-6 w-full max-w-2xl">
+              <PartnerResponses
+                sessionId={sessionId}
+                cardId={currentCard.id}
+                responses={responses}
+                participants={participants}
+              />
+            </div>
+          )}
           <div className="flex gap-3 mt-6">
             <Button onClick={() => handleNext()} disabled={sessionId && !isHost}>Next Card</Button>
           </div>

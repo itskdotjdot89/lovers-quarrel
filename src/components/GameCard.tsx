@@ -10,9 +10,11 @@ interface GameCardProps {
   onChoice?: (choice: 'A' | 'B') => void;
   onFavorite: () => void;
   onAnalyze?: () => void;
+  showResponseInput?: boolean;
+  responseInputComponent?: React.ReactNode;
 }
 
-const GameCard = ({ card, isFavorite, onChoice, onFavorite, onAnalyze }: GameCardProps) => {
+const GameCard = ({ card, isFavorite, onChoice, onFavorite, onAnalyze, showResponseInput, responseInputComponent }: GameCardProps) => {
   const renderCardContent = () => {
     switch (card.subtype) {
       case 'this_or_that':
@@ -69,7 +71,8 @@ const GameCard = ({ card, isFavorite, onChoice, onFavorite, onAnalyze }: GameCar
                 {card.text}
               </p>
             </div>
-            {onAnalyze && (
+            {showResponseInput && responseInputComponent}
+            {onAnalyze && !showResponseInput && (
               <Button
                 onClick={onAnalyze}
                 variant="outline"
