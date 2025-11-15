@@ -134,7 +134,7 @@ const Settings = () => {
             </h2>
             <div className="space-y-2 font-card text-sm text-muted-foreground">
               <p>Version 1.0.0</p>
-              <p>An intimate card game for couples</p>
+              <p>An intimate conversation card game</p>
               <p className="pt-4 text-xs">
                 18+ only • Play responsibly • Respect boundaries
               </p>
