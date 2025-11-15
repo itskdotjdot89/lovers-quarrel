@@ -69,6 +69,7 @@ const Pricing = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(false);
   const inviteCode = searchParams.get('invite');
+  const fromOnboarding = searchParams.get('from') === 'onboarding';
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -103,8 +104,14 @@ const Pricing = () => {
       if (error) throw error;
 
       if (data?.url) {
-        // Open Stripe checkout in new tab
-        window.open(data.url, '_blank');
+        if (fromOnboarding) {
+          // For onboarding flow, redirect in same window and mark onboarding complete after success
+          window.location.href = data.url;
+          localStorage.setItem('lq_trial_started', 'true');
+        } else {
+          // For regular flow, open in new tab
+          window.open(data.url, '_blank');
+        }
         
         toast({
           title: 'Redirecting to Checkout',
@@ -127,11 +134,14 @@ const Pricing = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 p-4 py-16">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
+          {fromOnboarding && (
+            <p className="text-sm text-muted-foreground mb-4">Step 2 of 3</p>
+          )}
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Choose Your Plan
+            {fromOnboarding ? 'Choose Your Plan' : 'Choose Your Plan'}
           </h1>
           <p className="text-muted-foreground text-lg mb-6">
-            Start your 7-day free trial. Cancel anytime.
+            {fromOnboarding ? 'Start your 7-day free trial to play' : 'Start your 7-day free trial. Cancel anytime.'}
           </p>
         </div>
 
@@ -175,7 +185,7 @@ const Pricing = () => {
                   onClick={() => handleSubscribe(plan)}
                   disabled={loading}
                 >
-                  Start 7-Day Free Trial
+                  {fromOnboarding ? 'Start Free Trial & Play' : 'Start 7-Day Free Trial'}
                 </Button>
 
                 <div className="space-y-3">
