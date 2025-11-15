@@ -347,14 +347,14 @@ const DeckSelection = () => {
         </TooltipProvider>
 
         <Button
-          onClick={sessionMode === 'couples' ? handleCreateSession : handleContinueSolo}
+          onClick={sessionMode === 'couples' ? () => setSetupStep('setup') : handleContinueSolo}
           disabled={selectedDecks.length === 0}
           className={`w-full bg-secondary hover:bg-secondary/90 text-foreground ${
             showTooltips ? 'animate-pulse' : ''
           }`}
           size="lg"
         >
-          {sessionMode === 'couples' ? 'Create Session' : 'Start Playing'}
+          {sessionMode === 'couples' ? 'Continue' : 'Start Playing'}
         </Button>
       </div>
     </div>
