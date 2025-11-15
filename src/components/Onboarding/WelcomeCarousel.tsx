@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Heart, Flame, MessageCircle, Users } from 'lucide-react';
@@ -37,6 +37,9 @@ const screens = [
 
 const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
   const [currentScreen, setCurrentScreen] = useState(0);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+  const [swipeOffset, setSwipeOffset] = useState(0);
 
   const handleNext = () => {
     if (currentScreen < screens.length - 1) {
@@ -46,12 +49,53 @@ const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
     }
   };
 
+  const handlePrevious = () => {
+    if (currentScreen > 0) {
+      setCurrentScreen(prev => prev - 1);
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+    const diff = touchEndX.current - touchStartX.current;
+    setSwipeOffset(diff);
+  };
+
+  const handleTouchEnd = () => {
+    const swipeDistance = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(swipeDistance) > minSwipeDistance) {
+      if (swipeDistance > 0) {
+        // Swipe left - next screen
+        handleNext();
+      } else {
+        // Swipe right - previous screen
+        handlePrevious();
+      }
+    }
+
+    setSwipeOffset(0);
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  };
+
   const screen = screens[currentScreen];
   const Icon = screen.icon;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8 space-y-8">
+      <Card 
+        className="w-full max-w-md p-8 space-y-8 transition-transform duration-200"
+        style={{ transform: `translateX(${swipeOffset * 0.3}px)` }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className="flex justify-center">
           <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
             <Icon className="w-10 h-10 text-primary" />
@@ -82,7 +126,7 @@ const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
         {currentScreen > 0 && (
           <Button
             variant="ghost"
-            onClick={() => setCurrentScreen(prev => prev - 1)}
+            onClick={handlePrevious}
             className="w-full"
           >
             Back
