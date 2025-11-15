@@ -29,6 +29,7 @@ const DeckSelection = () => {
     code: string;
     isHost: boolean;
   } | null>(null);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
 
   useEffect(() => {
     const firstTime = searchParams.get('first_time') === 'true';
@@ -57,76 +58,89 @@ const DeckSelection = () => {
   };
 
   const handleCreateSession = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    setIsCreatingSession(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to create a session",
+          variant: "destructive"
+        });
+        navigate('/auth');
+        return;
+      }
 
-    if (selectedDecks.length === 0) {
-      toast({
-        title: "Select at least one deck",
-        description: "Choose one or more decks to continue",
-        variant: "destructive"
-      });
-      return;
-    }
+      if (selectedDecks.length === 0) {
+        toast({
+          title: "Select at least one deck",
+          description: "Choose one or more decks to continue",
+          variant: "destructive"
+        });
+        return;
+      }
 
-    const sessionCode = generateSessionCode();
-    
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('display_name')
-      .eq('id', user.id)
-      .single();
+      const sessionCode = generateSessionCode();
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('display_name')
+        .eq('id', user.id)
+        .single();
 
-    const { data: session, error } = await supabase
-      .from('game_sessions')
-      .insert({
-        session_code: sessionCode,
-        host_id: user.id,
-        mode: 'date_night',
-        deck_ids: selectedDecks,
-        subtypes: [],
-        spice_level: intensity,
-        status: 'waiting'
-      })
-      .select()
-      .single();
+      const { data: session, error } = await supabase
+        .from('game_sessions')
+        .insert({
+          session_code: sessionCode,
+          host_id: user.id,
+          mode: 'date_night',
+          deck_ids: selectedDecks,
+          subtypes: [],
+          spice_level: intensity,
+          status: 'waiting'
+        })
+        .select()
+        .single();
 
-    if (error || !session) {
-      toast({
-        title: "Error",
-        description: "Failed to create session",
-        variant: "destructive"
-      });
-      return;
-    }
+      if (error || !session) {
+        toast({
+          title: "Error",
+          description: "Failed to create session",
+          variant: "destructive"
+        });
+        return;
+      }
 
-    await supabase
-      .from('session_participants')
-      .insert({
-        session_id: session.id,
-        user_id: user.id,
-        display_name: profile?.display_name || 'Host'
-      });
-
-    const filteredCards = filterCards(SEED_CARDS, selectedDecks, [], intensity);
-    const shuffled = shuffleCards(filteredCards);
-
-    for (let i = 0; i < shuffled.length; i++) {
       await supabase
-        .from('session_cards')
+        .from('session_participants')
         .insert({
           session_id: session.id,
-          card_id: shuffled[i].id,
-          card_order: i
+          user_id: user.id,
+          display_name: profile?.display_name || 'Host'
         });
-    }
 
-    setSessionData({
-      id: session.id,
-      code: sessionCode,
-      isHost: true
-    });
-    setSetupStep('waiting');
+      const filteredCards = filterCards(SEED_CARDS, selectedDecks, [], intensity);
+      const shuffled = shuffleCards(filteredCards);
+
+      for (let i = 0; i < shuffled.length; i++) {
+        await supabase
+          .from('session_cards')
+          .insert({
+            session_id: session.id,
+            card_id: shuffled[i].id,
+            card_order: i
+          });
+      }
+
+      setSessionData({
+        id: session.id,
+        code: sessionCode,
+        isHost: true
+      });
+      setSetupStep('waiting');
+    } finally {
+      setIsCreatingSession(false);
+    }
   };
 
   const handleJoinSession = async (code: string) => {
@@ -239,6 +253,7 @@ const DeckSelection = () => {
             onCreateSession={handleCreateSession}
             onJoinSession={handleJoinSession}
             onBack={() => setSetupStep('mode')}
+            isCreating={isCreatingSession}
           />
         </div>
       </div>

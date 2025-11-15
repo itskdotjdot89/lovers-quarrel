@@ -9,9 +9,10 @@ interface SessionSetupProps {
   onCreateSession: () => void;
   onJoinSession: (code: string) => void;
   onBack: () => void;
+  isCreating?: boolean;
 }
 
-const SessionSetup = ({ onCreateSession, onJoinSession, onBack }: SessionSetupProps) => {
+const SessionSetup = ({ onCreateSession, onJoinSession, onBack, isCreating }: SessionSetupProps) => {
   const [joinCode, setJoinCode] = useState('');
   const { toast } = useToast();
 
@@ -39,8 +40,8 @@ const SessionSetup = ({ onCreateSession, onJoinSession, onBack }: SessionSetupPr
           <p className="text-sm text-muted-foreground mb-4">
             Start a new session and invite your partner with a code
           </p>
-          <Button onClick={onCreateSession} className="w-full">
-            Create Session
+          <Button onClick={onCreateSession} className="w-full" disabled={isCreating}>
+            {isCreating ? 'Creating Session...' : 'Create Session'}
           </Button>
         </div>
       </Card>
