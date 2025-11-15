@@ -1,14 +1,19 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Play, Settings, Heart, Sparkles, LogIn, User } from 'lucide-react';
+import { Play, Settings, Heart, Sparkles, LogIn, User, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useToast } from '@/hooks/use-toast';
 
 const Home = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const { subscribed, loading, checkSubscription } = useSubscription();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -19,8 +24,22 @@ const Home = () => {
       setUser(session?.user ?? null);
     });
 
+    // Check if redirected from successful checkout
+    if (searchParams.get('success') === 'true') {
+      toast({
+        title: 'Welcome to Premium!',
+        description: 'Your subscription is now active. Enjoy all premium features!'
+      });
+      
+      // Refresh subscription status
+      checkSubscription();
+      
+      // Clear the success param
+      window.history.replaceState({}, '', '/home');
+    }
+
     return () => subscription.unsubscribe();
-  }, []);
+  }, [searchParams, toast, checkSubscription]);
 
   return (
     <div className="min-h-screen bg-background p-4 flex flex-col">
@@ -91,16 +110,34 @@ const Home = () => {
           <Card className="p-6 bg-gradient-to-br from-crimson-deep/20 to-crimson-vivid/20 border-2 border-crimson-vivid/30">
             <div className="flex items-start space-x-4">
               <Sparkles className="w-6 h-6 text-crimson-glow mt-1" />
-              <div>
-                <h3 className="font-display text-xl text-foreground mb-2">
-                  AI Add-On
-                </h3>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-display text-xl text-foreground">
+                    AI Add-On
+                  </h3>
+                  {subscribed && (
+                    <div className="flex items-center gap-1 text-green-500 text-sm">
+                      <Check className="w-4 h-4" />
+                      <span>Active</span>
+                    </div>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground font-card leading-relaxed">
                   Heat Ups, Deep Cuts, and Couple Insights powered by AI. 
                   <span className="text-crimson-glow font-semibold ml-1">
-                    Coming soon
+                    {subscribed ? 'Available now!' : 'Subscribe to unlock'}
                   </span>
                 </p>
+                {!subscribed && (
+                  <Button
+                    onClick={() => navigate('/pricing')}
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                  >
+                    View Plans
+                  </Button>
+                )}
               </div>
             </div>
           </Card>

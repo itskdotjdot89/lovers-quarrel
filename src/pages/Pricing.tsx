@@ -4,18 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Users, User, UsersRound } from 'lucide-react';
+import { Check, Users, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
-type BundleType = 'individual' | 'couple' | 'family';
+type BundleType = 'individual' | 'couple';
 
 interface PricingPlan {
   id: BundleType;
   name: string;
   icon: React.ReactNode;
   monthlyPrice: number;
-  annualPrice: number;
+  stripeMonthlyPriceId: string;
+  stripeProductId: string;
   description: string;
   features: string[];
   maxUsers: number;
@@ -28,13 +29,14 @@ const pricingPlans: PricingPlan[] = [
     name: 'Individual',
     icon: <User className="h-6 w-6" />,
     monthlyPrice: 5,
-    annualPrice: 30,
-    description: 'Perfect for solo exploration',
+    stripeMonthlyPriceId: 'price_1STYUuLisf4T9XH8vUJvgxrt',
+    stripeProductId: 'prod_TQPJuQMoKp9kuV',
+    description: 'For in-person gameplay',
     maxUsers: 1,
     features: [
       'All 3 decks (600 cards)',
       'Unlimited AI analyses',
-      'Solo mode',
+      'Solo & date night modes',
       'Favorites & custom sessions',
       'New cards quarterly'
     ]
@@ -44,8 +46,9 @@ const pricingPlans: PricingPlan[] = [
     name: 'Couple Bundle',
     icon: <Users className="h-6 w-6" />,
     monthlyPrice: 8,
-    annualPrice: 48,
-    description: 'Best value for partners',
+    stripeMonthlyPriceId: 'price_1STYVLLisf4T9XH8Y3xVbLzx',
+    stripeProductId: 'prod_TQPJ0ctEyMaLvZ',
+    description: 'For long-distance joint play',
     maxUsers: 2,
     popular: true,
     features: [
@@ -56,22 +59,6 @@ const pricingPlans: PricingPlan[] = [
       'Couple insights',
       'Save $2/month vs 2 individual plans'
     ]
-  },
-  {
-    id: 'family',
-    name: 'Family Plan',
-    icon: <UsersRound className="h-6 w-6" />,
-    monthlyPrice: 12,
-    annualPrice: 72,
-    description: 'For friend groups & families',
-    maxUsers: 4,
-    features: [
-      'Everything in Couple',
-      'Up to 4 accounts',
-      'Party mode (3-10 players)',
-      'Group insights',
-      'Family-friendly content filter'
-    ]
   }
 ];
 
@@ -81,8 +68,6 @@ const Pricing = () => {
   const { toast } = useToast();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<BundleType>('couple');
-  const [isAnnual, setIsAnnual] = useState(false);
   const inviteCode = searchParams.get('invite');
 
   useEffect(() => {
@@ -94,7 +79,6 @@ const Pricing = () => {
     });
 
     if (inviteCode) {
-      setSelectedPlan('couple');
       toast({
         title: 'Partner Invitation',
         description: 'Your partner has invited you to join their subscription!'
@@ -102,7 +86,7 @@ const Pricing = () => {
     }
   }, [navigate, inviteCode, toast]);
 
-  const handleSubscribe = async (planId: BundleType) => {
+  const handleSubscribe = async (plan: PricingPlan) => {
     if (!user) {
       navigate(`/auth${inviteCode ? `?invite=${inviteCode}` : ''}`);
       return;
@@ -111,33 +95,28 @@ const Pricing = () => {
     setLoading(true);
 
     try {
-      // Create trial subscription
-      const trialEnd = new Date();
-      trialEnd.setDate(trialEnd.getDate() + 7);
-
-      const { error } = await supabase.from('subscriptions').insert({
-        owner_id: user.id,
-        bundle_type: planId,
-        plan_interval: isAnnual ? 'annual' : 'monthly',
-        status: 'trialing',
-        trial_end: trialEnd.toISOString(),
-        current_period_start: new Date().toISOString(),
-        current_period_end: trialEnd.toISOString()
+      // Call Stripe checkout edge function
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { price_id: plan.stripeMonthlyPriceId }
       });
 
       if (error) throw error;
 
-      toast({
-        title: 'Trial Started!',
-        description: `Your 7-day free trial has begun. Enjoy full access to all features.`
-      });
-
-      navigate('/home');
+      if (data?.url) {
+        // Open Stripe checkout in new tab
+        window.open(data.url, '_blank');
+        
+        toast({
+          title: 'Redirecting to Checkout',
+          description: 'Complete your payment to start your 7-day free trial!'
+        });
+      }
     } catch (error: any) {
+      console.error('Checkout error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message
+        description: error.message || 'Failed to create checkout session'
       });
     } finally {
       setLoading(false);
@@ -154,27 +133,9 @@ const Pricing = () => {
           <p className="text-muted-foreground text-lg mb-6">
             Start your 7-day free trial. Cancel anytime.
           </p>
-          
-          <div className="inline-flex items-center gap-2 bg-muted rounded-lg p-1">
-            <Button
-              variant={!isAnnual ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setIsAnnual(false)}
-            >
-              Monthly
-            </Button>
-            <Button
-              variant={isAnnual ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setIsAnnual(true)}
-            >
-              Annual
-              <Badge variant="secondary" className="ml-2">Save 20%</Badge>
-            </Button>
-          </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {pricingPlans.map((plan) => (
             <Card
               key={plan.id}
@@ -200,17 +161,10 @@ const Pricing = () => {
                 <div className="mt-4">
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-bold">
-                      ${isAnnual ? plan.annualPrice : plan.monthlyPrice}
+                      ${plan.monthlyPrice}
                     </span>
-                    <span className="text-muted-foreground">
-                      /{isAnnual ? 'year' : 'month'}
-                    </span>
+                    <span className="text-muted-foreground">/month</span>
                   </div>
-                  {isAnnual && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      ${(plan.annualPrice / 12).toFixed(2)}/month billed annually
-                    </p>
-                  )}
                 </div>
               </CardHeader>
 
@@ -218,7 +172,7 @@ const Pricing = () => {
                 <Button
                   className="w-full"
                   variant={plan.popular ? 'default' : 'outline'}
-                  onClick={() => handleSubscribe(plan.id)}
+                  onClick={() => handleSubscribe(plan)}
                   disabled={loading}
                 >
                   Start 7-Day Free Trial
