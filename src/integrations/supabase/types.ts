@@ -82,6 +82,48 @@ export type Database = {
         }
         Relationships: []
       }
+      game_sessions: {
+        Row: {
+          created_at: string
+          current_card_index: number
+          deck_ids: string[]
+          host_id: string
+          id: string
+          mode: string
+          session_code: string
+          spice_level: string
+          status: string
+          subtypes: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_card_index?: number
+          deck_ids: string[]
+          host_id: string
+          id?: string
+          mode: string
+          session_code: string
+          spice_level: string
+          status?: string
+          subtypes: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_card_index?: number
+          deck_ids?: string[]
+          host_id?: string
+          id?: string
+          mode?: string
+          session_code?: string
+          spice_level?: string
+          status?: string
+          subtypes?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -105,6 +147,111 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      session_cards: {
+        Row: {
+          card_id: string
+          card_order: number
+          created_at: string
+          id: string
+          session_id: string
+        }
+        Insert: {
+          card_id: string
+          card_order: number
+          created_at?: string
+          id?: string
+          session_id: string
+        }
+        Update: {
+          card_id?: string
+          card_order?: number
+          created_at?: string
+          id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_cards_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_participants: {
+        Row: {
+          display_name: string | null
+          id: string
+          joined_at: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          display_name?: string | null
+          id?: string
+          joined_at?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          display_name?: string | null
+          id?: string
+          joined_at?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_responses: {
+        Row: {
+          card_id: string
+          choice: string | null
+          created_at: string
+          id: string
+          response_text: string | null
+          response_type: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          card_id: string
+          choice?: string | null
+          created_at?: string
+          id?: string
+          response_text?: string | null
+          response_type: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          card_id?: string
+          choice?: string | null
+          created_at?: string
+          id?: string
+          response_text?: string | null
+          response_type?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscription_invites: {
         Row: {

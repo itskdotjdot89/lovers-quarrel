@@ -3,23 +3,37 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Info } from 'lucide-react';
 import DeckCard from '@/components/DeckCard';
+import SessionModeSelector from '@/components/SessionModeSelector';
+import SessionSetup from '@/components/SessionSetup';
+import WaitingRoom from '@/components/WaitingRoom';
 import { DECKS } from '@/data/decks';
 import { DeckMood, SpiceLevel } from '@/types/game';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { shuffleCards, filterCards } from '@/lib/gameLogic';
+import { SEED_CARDS } from '@/data/seedCards';
 
 const DeckSelection = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { toast } = useToast();
   const [selectedDecks, setSelectedDecks] = useState<DeckMood[]>(['freaky']);
   const [intensity, setIntensity] = useState<SpiceLevel>('standard');
   const [showTooltips, setShowTooltips] = useState(false);
+  const [sessionMode, setSessionMode] = useState<'solo' | 'couples' | null>(null);
+  const [setupStep, setSetupStep] = useState<'mode' | 'setup' | 'waiting' | 'decks'>('mode');
+  const [sessionData, setSessionData] = useState<{
+    id: string;
+    code: string;
+    isHost: boolean;
+  } | null>(null);
 
   useEffect(() => {
     const firstTime = searchParams.get('first_time') === 'true';
     if (firstTime) {
       setShowTooltips(true);
-      // Hide tooltips after 10 seconds
       const timer = setTimeout(() => setShowTooltips(false), 10000);
       return () => clearTimeout(timer);
     }
@@ -33,16 +47,168 @@ const DeckSelection = () => {
     );
   };
 
-  const handleContinue = () => {
+  const generateSessionCode = () => {
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
+  };
+
+  const handleModeSelect = (mode: 'solo' | 'couples') => {
+    setSessionMode(mode);
+    setSetupStep('decks');
+  };
+
+  const handleCreateSession = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    if (selectedDecks.length === 0) {
+      toast({
+        title: "Select at least one deck",
+        description: "Choose one or more decks to continue",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const sessionCode = generateSessionCode();
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name')
+      .eq('id', user.id)
+      .single();
+
+    const { data: session, error } = await supabase
+      .from('game_sessions')
+      .insert({
+        session_code: sessionCode,
+        host_id: user.id,
+        mode: 'date_night',
+        deck_ids: selectedDecks,
+        subtypes: [],
+        spice_level: intensity,
+        status: 'waiting'
+      })
+      .select()
+      .single();
+
+    if (error || !session) {
+      toast({
+        title: "Error",
+        description: "Failed to create session",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    await supabase
+      .from('session_participants')
+      .insert({
+        session_id: session.id,
+        user_id: user.id,
+        display_name: profile?.display_name || 'Host'
+      });
+
+    const filteredCards = filterCards(SEED_CARDS, selectedDecks, [], intensity);
+    const shuffled = shuffleCards(filteredCards);
+
+    for (let i = 0; i < shuffled.length; i++) {
+      await supabase
+        .from('session_cards')
+        .insert({
+          session_id: session.id,
+          card_id: shuffled[i].id,
+          card_order: i
+        });
+    }
+
+    setSessionData({
+      id: session.id,
+      code: sessionCode,
+      isHost: true
+    });
+    setSetupStep('waiting');
+  };
+
+  const handleJoinSession = async (code: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: session } = await supabase
+      .from('game_sessions')
+      .select('*')
+      .eq('session_code', code)
+      .single();
+
+    if (!session) {
+      toast({
+        title: "Session not found",
+        description: "Please check the code and try again",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name')
+      .eq('id', user.id)
+      .single();
+
+    const { error } = await supabase
+      .from('session_participants')
+      .insert({
+        session_id: session.id,
+        user_id: user.id,
+        display_name: profile?.display_name || 'Player'
+      });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to join session",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSessionData({
+      id: session.id,
+      code: code,
+      isHost: false
+    });
+    setSetupStep('waiting');
+  };
+
+  const handleStartGame = async () => {
+    if (!sessionData) return;
+
+    await supabase
+      .from('game_sessions')
+      .update({ status: 'active' })
+      .eq('id', sessionData.id);
+
+    navigate(`/play?session=${sessionData.id}`);
+  };
+
+  const handleCancelSession = async () => {
+    if (sessionData) {
+      await supabase
+        .from('game_sessions')
+        .delete()
+        .eq('id', sessionData.id);
+    }
+    setSessionData(null);
+    setSetupStep('mode');
+  };
+
+  const handleContinueSolo = () => {
     if (selectedDecks.length === 0) return;
     
-    // Mark onboarding as completed on first game start
     const firstTime = searchParams.get('first_time') === 'true';
     if (firstTime) {
       localStorage.setItem('lq_onboarding_completed', 'true');
     }
     
-    // Store session config
     localStorage.setItem('lq_session_config', JSON.stringify({
       deckIds: selectedDecks,
       intensity,
@@ -52,14 +218,58 @@ const DeckSelection = () => {
     navigate('/play');
   };
 
+  if (setupStep === 'mode') {
+    return (
+      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+        <div className="max-w-md w-full">
+          <Button variant="ghost" onClick={() => navigate('/')} className="mb-6 text-foreground">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <SessionModeSelector onSelect={handleModeSelect} />
+        </div>
+      </div>
+    );
+  }
+
+  if (setupStep === 'setup') {
+    return (
+      <div className="min-h-screen bg-background p-4">
+        <div className="max-w-md mx-auto">
+          <SessionSetup
+            onCreateSession={handleCreateSession}
+            onJoinSession={handleJoinSession}
+            onBack={() => setSetupStep('mode')}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (setupStep === 'waiting' && sessionData) {
+    return (
+      <WaitingRoom
+        sessionCode={sessionData.code}
+        sessionId={sessionData.id}
+        isHost={sessionData.isHost}
+        onStart={handleStartGame}
+        onCancel={handleCancelSession}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
         <div className="flex items-center mb-6">
           <Button
             variant="ghost"
-            onClick={() => navigate('/')}
+            onClick={() => {
+              if (sessionMode === 'couples') {
+                setSetupStep('mode');
+              } else {
+                navigate('/');
+              }
+            }}
             className="text-foreground hover:text-secondary"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -69,7 +279,6 @@ const DeckSelection = () => {
           </h1>
         </div>
 
-        {/* Intensity Slider */}
         <Card className="p-6 mb-6 bg-card border-2 border-border relative">
           <TooltipProvider>
             <Tooltip open={showTooltips}>
@@ -104,53 +313,49 @@ const DeckSelection = () => {
           </div>
           <p className="text-xs text-muted-foreground font-ui mt-3">
             {intensity === 'soft' && 'Gentle prompts, suitable for building intimacy'}
-            {intensity === 'standard' && 'Balanced mix of intimate and spicy content'}
-            {intensity === 'spicy' && 'All content unlocked, maximum heat'}
+            {intensity === 'standard' && 'Balanced mix of connection and excitement'}
+            {intensity === 'spicy' && 'Bold, adventurous questions for the brave'}
           </p>
         </Card>
 
-        {/* Deck Selection */}
         <TooltipProvider>
           <Tooltip open={showTooltips}>
             <TooltipTrigger asChild>
-              <div className="space-y-4 mb-6">
-                {DECKS.map((deck, index) => (
-                  <div key={deck.id} className="relative">
-                    {index === 0 && showTooltips && (
-                      <Info className="absolute -top-2 -right-2 w-5 h-5 text-primary animate-pulse z-10" />
-                    )}
+              <div>
+                {showTooltips && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <Info className="w-4 h-4 text-primary animate-pulse" />
+                    <p className="text-sm text-muted-foreground">Tap any deck to select it. Mix multiple moods!</p>
+                  </div>
+                )}
+                <div className="grid gap-4 mb-6">
+                  {DECKS.map(deck => (
                     <DeckCard
+                      key={deck.id}
                       deck={deck}
                       selected={selectedDecks.includes(deck.id)}
                       onToggle={() => toggleDeck(deck.id)}
                     />
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-xs">
-              <p>Tap decks to select multiple moods. Mix and match for the perfect vibe!</p>
+            <TooltipContent side="top" className="max-w-xs">
+              <p>Choose at least one deck. You can select multiple!</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
-        {/* Continue Button */}
         <Button
-          onClick={handleContinue}
+          onClick={sessionMode === 'couples' ? handleCreateSession : handleContinueSolo}
           disabled={selectedDecks.length === 0}
-          className={`w-full h-16 bg-secondary hover:bg-secondary/90 text-foreground font-display text-xl card-shadow ${
-            showTooltips ? 'animate-pulse ring-4 ring-primary/50' : ''
+          className={`w-full bg-secondary hover:bg-secondary/90 text-foreground ${
+            showTooltips ? 'animate-pulse' : ''
           }`}
+          size="lg"
         >
-          Start Session
-          <span className="ml-2 text-sm font-ui">
-            ({selectedDecks.length} deck{selectedDecks.length !== 1 ? 's' : ''})
-          </span>
+          {sessionMode === 'couples' ? 'Create Session' : 'Start Playing'}
         </Button>
-
-        <p className="text-center text-xs text-muted-foreground font-ui mt-4">
-          You can pass on any card • All players must consent
-        </p>
       </div>
     </div>
   );
