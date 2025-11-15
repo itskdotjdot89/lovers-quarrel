@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Mic, Type } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import TypingIndicator from './TypingIndicator';
 
 interface Response {
   id: string;
@@ -23,9 +24,10 @@ interface PartnerResponsesProps {
   cardId: string;
   responses: Response[];
   participants: Participant[];
+  presences: Record<string, any[]>;
 }
 
-const PartnerResponses = ({ sessionId, cardId, responses, participants }: PartnerResponsesProps) => {
+const PartnerResponses = ({ sessionId, cardId, responses, participants, presences }: PartnerResponsesProps) => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,6 +47,14 @@ const PartnerResponses = ({ sessionId, cardId, responses, participants }: Partne
 
   const filteredResponses = responses.filter(r => r.user_id !== currentUserId);
 
+  // Get partner's current status from presences
+  const partnerPresence = Object.values(presences)
+    .flat()
+    .find(p => p.user_id !== currentUserId);
+  
+  const showTypingIndicator = partnerPresence && 
+    (partnerPresence.status === 'typing' || partnerPresence.status === 'recording');
+
   if (filteredResponses.length === 0) {
     return (
       <Card className="p-4 bg-muted/30 border-border">
@@ -58,6 +68,13 @@ const PartnerResponses = ({ sessionId, cardId, responses, participants }: Partne
   return (
     <div className="space-y-3">
       <h3 className="font-display text-lg text-foreground">Partner's Response</h3>
+      
+      {showTypingIndicator && (
+        <TypingIndicator 
+          partnerName={getParticipantName(partnerPresence.user_id)}
+          status={partnerPresence.status}
+        />
+      )}
       {filteredResponses.map((response) => {
         const name = getParticipantName(response.user_id);
         return (

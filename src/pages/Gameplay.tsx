@@ -13,6 +13,7 @@ import { loadFavorites, saveFavorites, toggleFavorite } from '@/lib/gameLogic';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
+import { usePresence } from '@/hooks/usePresence';
 
 const Gameplay = () => {
   const navigate = useNavigate();
@@ -28,6 +29,8 @@ const Gameplay = () => {
   const [isHost, setIsHost] = useState(false);
   const [totalCards, setTotalCards] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentUserDisplayName, setCurrentUserDisplayName] = useState('');
+  const { presences, updateStatus } = usePresence(sessionId);
 
   useEffect(() => {
     if (sessionId) {
@@ -70,7 +73,13 @@ const Gameplay = () => {
     }
 
     const { data: parts } = await supabase.from('session_participants').select('*').eq('session_id', sessionId);
-    if (parts) setParticipants(parts);
+    if (parts) {
+      setParticipants(parts);
+      const currentParticipant = parts.find(p => p.user_id === user.id);
+      if (currentParticipant?.display_name) {
+        setCurrentUserDisplayName(currentParticipant.display_name);
+      }
+    }
     
     await loadResponses();
   };
@@ -163,18 +172,20 @@ const Gameplay = () => {
                   sessionId={sessionId}
                   cardId={currentCard.id}
                   onResponseSubmitted={loadResponses}
+                  onStatusChange={(status) => updateStatus(status, currentUserDisplayName)}
                 />
               ) : undefined
             }
           />
           
-          {sessionId && responses.length > 0 && (
+          {sessionId && (
             <div className="mt-6 w-full max-w-2xl">
               <PartnerResponses
                 sessionId={sessionId}
                 cardId={currentCard.id}
                 responses={responses}
                 participants={participants}
+                presences={presences}
               />
             </div>
           )}
