@@ -31,8 +31,26 @@ serve(async (req) => {
 
     const { responseText, cardId, questionText } = await req.json();
     
-    if (!responseText) {
-      throw new Error('No response text provided');
+    // Input validation
+    if (!responseText || typeof responseText !== 'string') {
+      throw new Error('Response text is required and must be a string');
+    }
+    if (responseText.trim().length === 0) {
+      throw new Error('Response text cannot be empty');
+    }
+    if (responseText.length > 10000) {
+      throw new Error('Response text exceeds maximum length of 10,000 characters');
+    }
+    
+    if (!cardId || typeof cardId !== 'string') {
+      throw new Error('Card ID is required and must be a string');
+    }
+    if (cardId.length > 100 || !/^[a-zA-Z0-9_-]+$/.test(cardId)) {
+      throw new Error('Card ID must be alphanumeric (max 100 characters)');
+    }
+    
+    if (questionText && typeof questionText === 'string' && questionText.length > 1000) {
+      throw new Error('Question text exceeds maximum length of 1,000 characters');
     }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
