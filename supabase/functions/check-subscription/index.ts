@@ -41,6 +41,25 @@ serve(async (req) => {
     
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Whitelist for users with indefinite premium access
+    const premiumWhitelist = ["dmpaige92@gmail.com"];
+    
+    if (premiumWhitelist.includes(user.email.toLowerCase())) {
+      logStep("User is whitelisted for premium access", { email: user.email });
+      const farFutureDate = new Date();
+      farFutureDate.setFullYear(farFutureDate.getFullYear() + 100);
+      
+      return new Response(JSON.stringify({
+        subscribed: true,
+        product_id: "premium_whitelist",
+        subscription_end: farFutureDate.toISOString(),
+        status: "active"
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     
     // Check if customer exists
