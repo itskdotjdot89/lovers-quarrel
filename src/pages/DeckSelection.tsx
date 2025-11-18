@@ -149,13 +149,13 @@ const DeckSelection = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data: session } = await supabase
+    const { data: session, error: fetchError } = await supabase
       .from('game_sessions')
       .select('*')
       .eq('session_code', code)
-      .single();
+      .maybeSingle();
 
-    if (!session) {
+    if (fetchError || !session) {
       toast({
         title: "Session not found",
         description: "Please check the code and try again",
