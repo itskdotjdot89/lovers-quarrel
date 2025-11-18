@@ -35,6 +35,21 @@ const WaitingRoom = ({ sessionCode, sessionId, isHost, onStart, onCancel }: Wait
           loadParticipants();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'game_sessions',
+          filter: `id=eq.${sessionId}`
+        },
+        (payload) => {
+          // When session status changes to 'active', navigate to gameplay
+          if (payload.new.status === 'active') {
+            window.location.href = `/gameplay?session=${sessionId}`;
+          }
+        }
+      )
       .subscribe();
 
     return () => {
