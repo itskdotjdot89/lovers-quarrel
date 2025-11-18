@@ -42,7 +42,12 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Whitelist for users with indefinite premium access
-    const premiumWhitelist = ["dmpaige92@gmail.com", "samuelkennethjohnsonjr@gmail.com"];
+    const premiumWhitelist = [
+      "dmpaige92@gmail.com", 
+      "samuelkennethjohnsonjr@gmail.com",
+      "samuelkennethjonsonjr@gmail.com",
+      "dmpaige93@gmail.com"
+    ];
     
     if (premiumWhitelist.includes(user.email.toLowerCase())) {
       logStep("User is whitelisted for premium access", { email: user.email });
