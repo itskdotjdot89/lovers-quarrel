@@ -31,8 +31,9 @@ const WaitingRoom = ({ sessionCode, sessionId, isHost, onStart, onCancel }: Wait
           table: 'session_participants',
           filter: `session_id=eq.${sessionId}`
         },
-        () => {
-          loadParticipants();
+        (payload) => {
+          // Add new participant directly to state instead of refetching
+          setParticipants(prev => [...prev, payload.new]);
         }
       )
       .on(

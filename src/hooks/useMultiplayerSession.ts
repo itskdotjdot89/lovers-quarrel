@@ -27,17 +27,19 @@ export const useMultiplayerSession = (sessionId: string | null) => {
   const loadSession = async () => {
     if (!sessionId) return;
 
-    const { data: sessionData } = await supabase
-      .from('game_sessions')
-      .select('*')
-      .eq('id', sessionId)
-      .single();
+    // Load session and card in parallel for faster initial load
+    const [sessionResult, cardResult] = await Promise.all([
+      supabase.from('game_sessions').select('*').eq('id', sessionId).single(),
+      supabase.from('session_cards').select('*').eq('session_id', sessionId).order('card_order').limit(1).single()
+    ]);
 
-    if (sessionData) {
-      setSession(sessionData);
-      const cardData = await loadCurrentCard(sessionData.current_card_index);
-      if (cardData) {
-        await loadResponses(cardData.card_id);
+    if (sessionResult.data) {
+      setSession(sessionResult.data);
+      
+      if (cardResult.data) {
+        setCurrentCard(cardResult.data);
+        // Load responses for the current card
+        loadResponses(cardResult.data.card_id);
       }
     }
     setLoading(false);
@@ -105,8 +107,9 @@ export const useMultiplayerSession = (sessionId: string | null) => {
           table: 'session_responses',
           filter: `session_id=eq.${sessionId}`
         },
-        () => {
-          loadResponses();
+        (payload) => {
+          // Add new response directly to state instead of refetching
+          setResponses(prev => [...prev, payload.new]);
         }
       )
       .subscribe();
