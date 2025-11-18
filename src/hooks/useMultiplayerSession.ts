@@ -17,7 +17,11 @@ export const useMultiplayerSession = (sessionId: string | null) => {
     }
 
     loadSession();
-    subscribeToSession();
+    const cleanup = subscribeToSession();
+    
+    return () => {
+      cleanup?.();
+    };
   }, [sessionId]);
 
   const loadSession = async () => {
@@ -31,8 +35,10 @@ export const useMultiplayerSession = (sessionId: string | null) => {
 
     if (sessionData) {
       setSession(sessionData);
-      await loadCurrentCard(sessionData.current_card_index);
-      await loadResponses();
+      const cardData = await loadCurrentCard(sessionData.current_card_index);
+      if (cardData) {
+        await loadResponses(cardData.card_id);
+      }
     }
     setLoading(false);
   };
@@ -49,17 +55,21 @@ export const useMultiplayerSession = (sessionId: string | null) => {
 
     if (data) {
       setCurrentCard(data);
+      return data;
     }
   };
 
-  const loadResponses = async () => {
-    if (!sessionId || !currentCard) return;
+  const loadResponses = async (cardId?: string) => {
+    if (!sessionId) return;
+    
+    const targetCardId = cardId || currentCard?.card_id;
+    if (!targetCardId) return;
 
     const { data } = await supabase
       .from('session_responses')
       .select('*')
       .eq('session_id', sessionId)
-      .eq('card_id', currentCard.card_id);
+      .eq('card_id', targetCardId);
 
     if (data) {
       setResponses(data);
@@ -79,9 +89,12 @@ export const useMultiplayerSession = (sessionId: string | null) => {
           table: 'game_sessions',
           filter: `id=eq.${sessionId}`
         },
-        (payload) => {
+        async (payload) => {
           setSession(payload.new);
-          loadCurrentCard(payload.new.current_card_index);
+          const cardData = await loadCurrentCard(payload.new.current_card_index);
+          if (cardData) {
+            await loadResponses(cardData.card_id);
+          }
         }
       )
       .on(
