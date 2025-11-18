@@ -73,12 +73,22 @@ const Onboarding = () => {
             </p>
           </div>
 
-          <Button
-            onClick={handleStartTrial}
-            className="w-full h-12 text-lg"
-          >
-            Create Account & Start Trial
-          </Button>
+          <div className="space-y-3">
+            <Button
+              onClick={handleStartTrial}
+              className="w-full h-12 text-lg"
+            >
+              Create Account & Start Trial
+            </Button>
+
+            <Button
+              onClick={() => navigate('/auth')}
+              variant="outline"
+              className="w-full h-12 text-lg"
+            >
+              Already have an account? Sign In
+            </Button>
+          </div>
 
           <p className="text-xs text-center text-muted-foreground">
             By continuing, you agree to our Terms of Service and Privacy Policy
