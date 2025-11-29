@@ -130,10 +130,6 @@ const Gameplay = () => {
       await supabase.from('game_sessions').update({ current_card_index: currentIndex + 1 }).eq('id', sessionId);
     } else {
       // Solo mode
-      const configStr = localStorage.getItem('lq_session_config');
-      if (!configStr) return;
-      const config = JSON.parse(configStr);
-      const cards = SEED_CARDS.filter(c => config.deckIds.includes(c.deckId));
       const nextIndex = currentIndex + 1;
       
       if (nextIndex < cards.length) {
