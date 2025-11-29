@@ -121,12 +121,27 @@ const Gameplay = () => {
   };
 
   const handleNext = async () => {
-    if (sessionId && !isHost) {
-      toast.error('Only host can advance');
-      return;
-    }
     if (sessionId) {
+      // Multiplayer mode
+      if (!isHost) {
+        toast.error('Only host can advance');
+        return;
+      }
       await supabase.from('game_sessions').update({ current_card_index: currentIndex + 1 }).eq('id', sessionId);
+    } else {
+      // Solo mode
+      const configStr = localStorage.getItem('lq_session_config');
+      if (!configStr) return;
+      const config = JSON.parse(configStr);
+      const cards = SEED_CARDS.filter(c => config.deckIds.includes(c.deckId));
+      const nextIndex = currentIndex + 1;
+      
+      if (nextIndex < cards.length) {
+        setCurrentCard(cards[nextIndex]);
+        setCurrentIndex(nextIndex);
+      } else {
+        toast.info('No more cards in this session');
+      }
     }
   };
 
