@@ -154,15 +154,18 @@ const Gameplay = () => {
             isFavorite={favorites.includes(currentCard.id)} 
             onFavorite={handleFavorite}
             onChoice={currentCard.subtype === 'this_or_that' ? async (choice) => {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (!user || !sessionId) return;
-              await supabase.from('session_responses').insert({
-                session_id: sessionId,
-                card_id: currentCard.id,
-                user_id: user.id,
-                response_type: 'choice',
-                choice: choice
-              });
+              if (sessionId) {
+                // Multiplayer mode
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+                await supabase.from('session_responses').insert({
+                  session_id: sessionId,
+                  card_id: currentCard.id,
+                  user_id: user.id,
+                  response_type: 'choice',
+                  choice: choice
+                });
+              }
               toast.success(`You chose: ${choice === 'A' ? currentCard.choiceA : currentCard.choiceB}`);
             } : undefined}
             showResponseInput={sessionId && currentCard.subtype === 'open_ended'}
