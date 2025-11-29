@@ -82,6 +82,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cards: {
+        Row: {
+          choice_a: string | null
+          choice_b: string | null
+          created_at: string
+          deck_id: string
+          id: string
+          is_active: boolean
+          spice: string
+          subtype: string
+          text: string
+        }
+        Insert: {
+          choice_a?: string | null
+          choice_b?: string | null
+          created_at?: string
+          deck_id: string
+          id?: string
+          is_active?: boolean
+          spice: string
+          subtype: string
+          text: string
+        }
+        Update: {
+          choice_a?: string | null
+          choice_b?: string | null
+          created_at?: string
+          deck_id?: string
+          id?: string
+          is_active?: boolean
+          spice?: string
+          subtype?: string
+          text?: string
+        }
+        Relationships: []
+      }
       game_sessions: {
         Row: {
           created_at: string
