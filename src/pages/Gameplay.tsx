@@ -7,9 +7,8 @@ import ResponseDialog from '@/components/ResponseDialog';
 import AIAnalysisDialog from '@/components/AIAnalysisDialog';
 import MultiplayerResponseInput from '@/components/MultiplayerResponseInput';
 import PartnerResponses from '@/components/PartnerResponses';
-import { SEED_CARDS } from '@/data/seedCards';
 import { Card as CardType } from '@/types/game';
-import { loadFavorites, saveFavorites, toggleFavorite } from '@/lib/gameLogic';
+import { loadFavorites, saveFavorites, toggleFavorite, shuffleCards } from '@/lib/gameLogic';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -19,6 +18,7 @@ const Gameplay = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session');
+  const [cards, setCards] = useState<CardType[]>([]);
   const [currentCard, setCurrentCard] = useState<CardType | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [showResponseDialog, setShowResponseDialog] = useState(false);
@@ -30,6 +30,7 @@ const Gameplay = () => {
   const [totalCards, setTotalCards] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentUserDisplayName, setCurrentUserDisplayName] = useState('');
+  const [loading, setLoading] = useState(true);
   const { presences, updateStatus } = usePresence(sessionId);
 
   useEffect(() => {
@@ -42,20 +43,61 @@ const Gameplay = () => {
     setFavorites(loadFavorites());
   }, [sessionId]);
 
-  const loadSoloSession = () => {
+  const loadSoloSession = async () => {
+    setLoading(true);
     const configStr = localStorage.getItem('lq_session_config');
     if (!configStr) {
       navigate('/decks');
       return;
     }
     const config = JSON.parse(configStr);
-    const cards = SEED_CARDS.filter(c => config.deckIds.includes(c.deckId));
-    setTotalCards(cards.length);
-    setCurrentCard(cards[0]);
+    
+    // Fetch cards from database
+    const { data: dbCards, error } = await supabase
+      .from('cards')
+      .select('*')
+      .in('deck_id', config.deckIds)
+      .eq('is_active', true);
+    
+    if (error || !dbCards || dbCards.length === 0) {
+      toast.error('Failed to load cards');
+      navigate('/decks');
+      return;
+    }
+    
+    // Filter by spice level
+    const filteredCards = dbCards.filter(card => {
+      if (config.intensity === 'soft') return card.spice === 'soft';
+      if (config.intensity === 'standard') return card.spice === 'soft' || card.spice === 'standard';
+      return true; // spicy includes all
+    });
+    
+    // Map database cards to CardType format
+    const mappedCards: CardType[] = filteredCards.map(card => ({
+      id: card.id,
+      deckId: card.deck_id as CardType['deckId'],
+      subtype: card.subtype as CardType['subtype'],
+      text: card.text,
+      choiceA: card.choice_a || undefined,
+      choiceB: card.choice_b || undefined,
+      spice: card.spice as CardType['spice'],
+      isActive: card.is_active,
+      createdAt: new Date(card.created_at).getTime()
+    }));
+    
+    // Shuffle the cards
+    const shuffled = shuffleCards(mappedCards);
+    
+    setCards(shuffled);
+    setTotalCards(shuffled.length);
+    setCurrentCard(shuffled[0]);
+    setCurrentIndex(0);
+    setLoading(false);
   };
 
   const loadMultiplayerSession = async () => {
     if (!sessionId) return;
+    setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -65,11 +107,48 @@ const Gameplay = () => {
     setIsHost(session.host_id === user.id);
     setCurrentIndex(session.current_card_index);
 
-    const { data: cards } = await supabase.from('session_cards').select('*').eq('session_id', sessionId).order('card_order');
-    if (cards) {
-      setTotalCards(cards.length);
-      const card = SEED_CARDS.find(c => c.id === cards[session.current_card_index]?.card_id);
-      setCurrentCard(card || null);
+    // Get session cards with their order
+    const { data: sessionCards } = await supabase
+      .from('session_cards')
+      .select('card_id, card_order')
+      .eq('session_id', sessionId)
+      .order('card_order');
+    
+    if (sessionCards && sessionCards.length > 0) {
+      setTotalCards(sessionCards.length);
+      
+      // Get all card IDs
+      const cardIds = sessionCards.map(sc => sc.card_id);
+      
+      // Fetch actual card data from database
+      const { data: dbCards } = await supabase
+        .from('cards')
+        .select('*')
+        .in('id', cardIds);
+      
+      if (dbCards) {
+        // Create a map for quick lookup
+        const cardMap = new Map(dbCards.map(c => [c.id, c]));
+        
+        // Map and order cards according to session_cards order
+        const orderedCards: CardType[] = sessionCards
+          .map(sc => cardMap.get(sc.card_id))
+          .filter(Boolean)
+          .map(card => ({
+            id: card!.id,
+            deckId: card!.deck_id as CardType['deckId'],
+            subtype: card!.subtype as CardType['subtype'],
+            text: card!.text,
+            choiceA: card!.choice_a || undefined,
+            choiceB: card!.choice_b || undefined,
+            spice: card!.spice as CardType['spice'],
+            isActive: card!.is_active,
+            createdAt: new Date(card!.created_at).getTime()
+          }));
+        
+        setCards(orderedCards);
+        setCurrentCard(orderedCards[session.current_card_index] || null);
+      }
     }
 
     const { data: parts } = await supabase.from('session_participants').select('*').eq('session_id', sessionId);
@@ -81,6 +160,7 @@ const Gameplay = () => {
       }
     }
     
+    setLoading(false);
     await loadResponses();
   };
 
@@ -149,7 +229,21 @@ const Gameplay = () => {
     toast.success(newFavorites.includes(currentCard.id) ? 'Added to favorites' : 'Removed from favorites');
   };
 
-  if (!currentCard) return <div className="min-h-screen bg-background flex items-center justify-center"><p>Loading...</p></div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-foreground">Loading cards...</p>
+      </div>
+    );
+  }
+
+  if (!currentCard) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-foreground">No cards available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-4">

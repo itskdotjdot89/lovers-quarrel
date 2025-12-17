@@ -7,13 +7,12 @@ import SessionModeSelector from '@/components/SessionModeSelector';
 import SessionSetup from '@/components/SessionSetup';
 import WaitingRoom from '@/components/WaitingRoom';
 import { DECKS } from '@/data/decks';
-import { DeckMood, SpiceLevel } from '@/types/game';
+import { DeckMood, SpiceLevel, Card as CardType } from '@/types/game';
 import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { shuffleCards, filterCards } from '@/lib/gameLogic';
-import { SEED_CARDS } from '@/data/seedCards';
+import { shuffleCards } from '@/lib/gameLogic';
 
 const DeckSelection = () => {
   const navigate = useNavigate();
@@ -103,7 +102,6 @@ const DeckSelection = () => {
         .single();
 
       if (error || !session) {
-        // Log full error for debugging
         console.error("Create session failed:", error);
         toast({
           title: "Error",
@@ -121,17 +119,58 @@ const DeckSelection = () => {
           display_name: profile?.display_name || 'Host'
         });
 
-      const filteredCards = filterCards(SEED_CARDS, selectedDecks, [], intensity);
-      const shuffled = shuffleCards(filteredCards);
+      // Fetch cards from database
+      const { data: dbCards, error: cardsError } = await supabase
+        .from('cards')
+        .select('*')
+        .in('deck_id', selectedDecks)
+        .eq('is_active', true);
 
-      for (let i = 0; i < shuffled.length; i++) {
-        await supabase
-          .from('session_cards')
-          .insert({
-            session_id: session.id,
-            card_id: shuffled[i].id,
-            card_order: i
-          });
+      if (cardsError || !dbCards || dbCards.length === 0) {
+        console.error("Failed to fetch cards:", cardsError);
+        toast({
+          title: "Error",
+          description: "Failed to load cards for session",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Filter by spice level
+      const filteredCards = dbCards.filter(card => {
+        if (intensity === 'soft') return card.spice === 'soft';
+        if (intensity === 'standard') return card.spice === 'soft' || card.spice === 'standard';
+        return true; // spicy includes all
+      });
+
+      // Map to CardType format for shuffling
+      const mappedCards: CardType[] = filteredCards.map(card => ({
+        id: card.id,
+        deckId: card.deck_id as CardType['deckId'],
+        subtype: card.subtype as CardType['subtype'],
+        text: card.text,
+        choiceA: card.choice_a || undefined,
+        choiceB: card.choice_b || undefined,
+        spice: card.spice as CardType['spice'],
+        isActive: card.is_active,
+        createdAt: new Date(card.created_at).getTime()
+      }));
+
+      const shuffled = shuffleCards(mappedCards);
+
+      // Insert session cards
+      const sessionCardsToInsert = shuffled.map((card, index) => ({
+        session_id: session.id,
+        card_id: card.id,
+        card_order: index
+      }));
+
+      const { error: insertError } = await supabase
+        .from('session_cards')
+        .insert(sessionCardsToInsert);
+
+      if (insertError) {
+        console.error("Failed to insert session cards:", insertError);
       }
 
       setSessionData({
