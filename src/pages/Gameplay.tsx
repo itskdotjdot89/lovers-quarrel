@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, SkipForward, Users } from 'lucide-react';
+import { ArrowLeft, Users } from 'lucide-react';
 import GameCard from '@/components/GameCard';
-import ResponseDialog from '@/components/ResponseDialog';
 import AIAnalysisDialog from '@/components/AIAnalysisDialog';
 import MultiplayerResponseInput from '@/components/MultiplayerResponseInput';
+import OpenEndedInput from '@/components/OpenEndedInput';
 import PartnerResponses from '@/components/PartnerResponses';
 import { Card as CardType } from '@/types/game';
 import { loadFavorites, saveFavorites, toggleFavorite, shuffleCards } from '@/lib/gameLogic';
@@ -21,9 +21,8 @@ const Gameplay = () => {
   const [cards, setCards] = useState<CardType[]>([]);
   const [currentCard, setCurrentCard] = useState<CardType | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [showResponseDialog, setShowResponseDialog] = useState(false);
   const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
-  const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
+  const [currentAnalysis, setCurrentAnalysis] = useState<{text: string; sentiment: string; themes: string[]} | null>(null);
   const [responses, setResponses] = useState<any[]>([]);
   const [participants, setParticipants] = useState<any[]>([]);
   const [isHost, setIsHost] = useState(false);
@@ -273,15 +272,25 @@ const Gameplay = () => {
               }
               toast.success(`You chose: ${choice === 'A' ? currentCard.choiceA : currentCard.choiceB}`);
             } : undefined}
-            showResponseInput={sessionId && currentCard.subtype === 'open_ended'}
             responseInputComponent={
-              sessionId && currentCard.subtype === 'open_ended' ? (
-                <MultiplayerResponseInput
-                  sessionId={sessionId}
-                  cardId={currentCard.id}
-                  onResponseSubmitted={loadResponses}
-                  onStatusChange={(status) => updateStatus(status, currentUserDisplayName)}
-                />
+              currentCard.subtype === 'open_ended' ? (
+                sessionId ? (
+                  <MultiplayerResponseInput
+                    sessionId={sessionId}
+                    cardId={currentCard.id}
+                    onResponseSubmitted={loadResponses}
+                    onStatusChange={(status) => updateStatus(status, currentUserDisplayName)}
+                  />
+                ) : (
+                  <OpenEndedInput
+                    cardId={currentCard.id}
+                    questionText={currentCard.text}
+                    onAnalysisComplete={(analysis, sentiment, themes) => {
+                      setCurrentAnalysis({ text: analysis, sentiment, themes });
+                      setShowAnalysisDialog(true);
+                    }}
+                  />
+                )
               ) : undefined
             }
           />
@@ -302,8 +311,13 @@ const Gameplay = () => {
           </div>
         </div>
       </div>
-      <ResponseDialog open={showResponseDialog} onOpenChange={setShowResponseDialog} cardId={currentCard.id} questionText={currentCard.text} onAnalysisComplete={(text, sentiment, themes) => setCurrentAnalysis({ text, sentiment, themes })} />
-      <AIAnalysisDialog open={showAnalysisDialog} onOpenChange={setShowAnalysisDialog} analysis={currentAnalysis} />
+      <AIAnalysisDialog 
+        open={showAnalysisDialog} 
+        onOpenChange={setShowAnalysisDialog} 
+        analysis={currentAnalysis?.text || ''} 
+        sentiment={currentAnalysis?.sentiment}
+        keyThemes={currentAnalysis?.themes}
+      />
     </div>
   );
 };

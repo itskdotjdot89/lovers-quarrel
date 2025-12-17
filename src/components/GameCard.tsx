@@ -1,7 +1,7 @@
 import { Card as CardType } from '@/types/game';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, Sparkles } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface GameCardProps {
@@ -9,12 +9,10 @@ interface GameCardProps {
   isFavorite: boolean;
   onChoice?: (choice: 'A' | 'B') => void;
   onFavorite: () => void;
-  onAnalyze?: () => void;
-  showResponseInput?: boolean;
   responseInputComponent?: React.ReactNode;
 }
 
-const GameCard = ({ card, isFavorite, onChoice, onFavorite, onAnalyze, showResponseInput, responseInputComponent }: GameCardProps) => {
+const GameCard = ({ card, isFavorite, onChoice, onFavorite, responseInputComponent }: GameCardProps) => {
   const renderCardContent = () => {
     switch (card.subtype) {
       case 'this_or_that':
@@ -66,22 +64,12 @@ const GameCard = ({ card, isFavorite, onChoice, onFavorite, onAnalyze, showRespo
       default:
         return (
           <div className="space-y-6">
-            <div className="flex items-center justify-center min-h-[200px]">
+            <div className="flex items-center justify-center min-h-[120px]">
               <p className="font-card text-2xl leading-relaxed text-center text-foreground px-4">
                 {card.text}
               </p>
             </div>
-            {showResponseInput && responseInputComponent}
-            {onAnalyze && !showResponseInput && (
-              <Button
-                onClick={onAnalyze}
-                variant="outline"
-                className="w-full h-auto py-4 text-base font-card border-2 border-secondary hover:bg-secondary/20 hover:border-secondary"
-              >
-                <Sparkles className="w-5 h-5 mr-2" />
-                Answer & Get AI Insights
-              </Button>
-            )}
+            {responseInputComponent}
           </div>
         );
     }
