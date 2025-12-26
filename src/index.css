@@ -84,6 +84,10 @@ All colors MUST be HSL.
     text-shadow: var(--glow-crimson);
   }
   
+  .logo-glow {
+    filter: drop-shadow(0 0 12px hsl(355 100% 35% / 0.5)) drop-shadow(0 0 24px hsl(355 100% 35% / 0.3));
+  }
+  
   .card-shadow {
     box-shadow: var(--shadow-card);
   }

@@ -127,7 +127,7 @@ const Auth = () => {
           <img 
             src={loversQuarrelLogo} 
             alt="Lovers' Quarrel" 
-            className="w-32 h-auto mx-auto"
+            className="w-32 h-auto mx-auto logo-glow"
           />
           <CardDescription className="text-center">
             Choose your mood. Draw your truth.

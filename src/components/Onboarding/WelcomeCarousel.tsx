@@ -101,7 +101,7 @@ const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
           <img 
             src={loversQuarrelLogo} 
             alt="Lovers' Quarrel" 
-            className="w-32 h-auto mx-auto"
+            className="w-32 h-auto mx-auto logo-glow"
           />
         ) : (
           <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
