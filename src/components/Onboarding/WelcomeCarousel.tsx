@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Heart, Flame, MessageCircle, Users } from 'lucide-react';
 import ProgressIndicator from './ProgressIndicator';
+import loversQuarrelLogo from '@/assets/lovers-quarrel-logo.png';
 
 interface WelcomeCarouselProps {
   onComplete: () => void;
@@ -96,11 +97,17 @@ const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="flex justify-center">
+        {currentScreen === 0 ? (
+          <img 
+            src={loversQuarrelLogo} 
+            alt="Lovers' Quarrel" 
+            className="w-32 h-auto mx-auto"
+          />
+        ) : (
           <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
             <Icon className="w-10 h-10 text-primary" />
           </div>
-        </div>
+        )}
 
         <div className="space-y-4 text-center">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">

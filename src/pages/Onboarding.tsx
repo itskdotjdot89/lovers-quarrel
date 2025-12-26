@@ -4,7 +4,8 @@ import WelcomeCarousel from '@/components/Onboarding/WelcomeCarousel';
 import AgeGate from '@/components/AgeGate';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, Sparkles } from 'lucide-react';
+import { Check } from 'lucide-react';
+import loversQuarrelLogo from '@/assets/lovers-quarrel-logo.png';
 
 type OnboardingStep = 'welcome' | 'age-gate' | 'trial-prompt';
 
@@ -38,11 +39,11 @@ const Onboarding = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4 text-center">
-          <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-primary" />
-            </div>
-          </div>
+          <img 
+            src={loversQuarrelLogo} 
+            alt="Lovers' Quarrel" 
+            className="w-32 h-auto mx-auto"
+          />
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             Start Your 7-Day Free Trial
           </CardTitle>
