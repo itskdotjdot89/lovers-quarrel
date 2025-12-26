@@ -65,39 +65,64 @@ serve(async (req) => {
       throw new Error('No audio data provided');
     }
 
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    if (!OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY not configured');
+    // Use Lovable AI for transcription
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
     }
 
     // Process audio in chunks
     const binaryAudio = processBase64Chunks(audio);
     
-    // Prepare form data
-    const formData = new FormData();
-    const blob = new Blob([binaryAudio], { type: 'audio/webm' });
-    formData.append('file', blob, 'audio.webm');
-    formData.append('model', 'whisper-1');
+    // Convert to base64 for API
+    const base64Audio = btoa(String.fromCharCode(...binaryAudio));
+    
+    console.log('Sending audio for transcription, size:', binaryAudio.length);
 
-    // Send to OpenAI
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    // Use Lovable AI with audio transcription capability
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
       },
-      body: formData,
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: 'Please transcribe the following audio. Return ONLY the transcribed text, nothing else. If you cannot understand the audio or if it is silent, return an empty string.'
+              },
+              {
+                type: 'input_audio',
+                input_audio: {
+                  data: base64Audio,
+                  format: 'webm'
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 500
+      }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
-      throw new Error(`OpenAI API error: ${errorText}`);
+      console.error('Lovable AI API error:', errorText);
+      throw new Error(`Transcription API error: ${errorText}`);
     }
 
     const result = await response.json();
+    const text = result.choices?.[0]?.message?.content?.trim() || '';
+    
+    console.log('Transcription result:', text);
 
     return new Response(
-      JSON.stringify({ text: result.text }),
+      JSON.stringify({ text }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
