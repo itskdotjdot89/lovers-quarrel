@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { User, Session } from '@supabase/supabase-js';
+import loversQuarrelLogo from '@/assets/lovers-quarrel-logo.png';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -123,9 +124,11 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background/95 to-primary/5 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Lovers' Quarrel
-          </CardTitle>
+          <img 
+            src={loversQuarrelLogo} 
+            alt="Lovers' Quarrel" 
+            className="w-32 h-auto mx-auto"
+          />
           <CardDescription className="text-center">
             Choose your mood. Draw your truth.
           </CardDescription>

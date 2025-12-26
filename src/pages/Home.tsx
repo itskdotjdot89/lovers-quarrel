@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useToast } from '@/hooks/use-toast';
+import loversQuarrelLogo from '@/assets/lovers-quarrel-logo.png';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -64,9 +65,11 @@ const Home = () => {
               </>
             )}
           </Button>
-          <h1 className="font-display text-5xl mb-3 text-glow text-foreground">
-            Lovers' Quarrel
-          </h1>
+          <img 
+            src={loversQuarrelLogo} 
+            alt="Lovers' Quarrel" 
+            className="w-48 h-auto mx-auto mb-3"
+          />
           <p className="font-card text-lg text-muted-foreground">
             Choose your mood. Draw your truth.
           </p>
