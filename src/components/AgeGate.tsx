@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Heart } from 'lucide-react';
+import loversQuarrelLogo from '@/assets/lovers-quarrel-logo.png';
 
 interface AgeGateProps {
   onAccept: () => void;
@@ -19,9 +19,11 @@ const AgeGate = ({ onAccept }: AgeGateProps) => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <Card className="max-w-md w-full p-8 bg-card border-2 border-secondary card-shadow">
         <div className="flex flex-col items-center space-y-6 text-center">
-          <div className="w-20 h-20 rounded-full bg-secondary/20 flex items-center justify-center">
-            <Heart className="w-10 h-10 text-secondary fill-secondary" />
-          </div>
+          <img 
+            src={loversQuarrelLogo} 
+            alt="Lovers Quarrel" 
+            className="w-32 h-auto"
+          />
           
           <h1 className="font-display text-3xl text-foreground">
             Lovers' Quarrel
