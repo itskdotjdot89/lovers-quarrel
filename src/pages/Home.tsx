@@ -68,7 +68,7 @@ const Home = () => {
           <img 
             src={loversQuarrelLogo} 
             alt="Lovers' Quarrel" 
-            className="w-48 h-auto mx-auto mb-3"
+            className="w-48 h-auto mx-auto mb-3 logo-glow"
           />
           <p className="font-card text-lg text-muted-foreground">
             Choose your mood. Draw your truth.

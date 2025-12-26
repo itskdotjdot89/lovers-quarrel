@@ -22,7 +22,7 @@ const AgeGate = ({ onAccept }: AgeGateProps) => {
           <img 
             src={loversQuarrelLogo} 
             alt="Lovers Quarrel" 
-            className="w-32 h-auto"
+            className="w-32 h-auto logo-glow"
           />
           
           <h1 className="font-display text-3xl text-foreground">

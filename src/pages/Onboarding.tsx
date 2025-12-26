@@ -42,7 +42,7 @@ const Onboarding = () => {
           <img 
             src={loversQuarrelLogo} 
             alt="Lovers' Quarrel" 
-            className="w-32 h-auto mx-auto"
+            className="w-32 h-auto mx-auto logo-glow"
           />
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             Start Your 7-Day Free Trial
