@@ -1,6 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Share2, Copy, Check } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface AIAnalysisDialogProps {
   open: boolean;
@@ -17,11 +21,77 @@ const AIAnalysisDialog = ({
   sentiment,
   keyThemes,
 }: AIAnalysisDialogProps) => {
+  const [copied, setCopied] = useState(false);
+
+  const buildShareText = () => {
+    let text = "💕 Lovers Quarrel - AI Insights\n\n";
+    
+    if (sentiment) {
+      text += `Emotional Tone: ${sentiment}\n\n`;
+    }
+    
+    if (keyThemes && keyThemes.length > 0) {
+      text += `Key Themes: ${keyThemes.join(', ')}\n\n`;
+    }
+    
+    text += `Insights:\n${analysis}`;
+    
+    return text;
+  };
+
+  const handleShare = async () => {
+    const shareText = buildShareText();
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Lovers Quarrel - AI Insights',
+          text: shareText,
+        });
+        toast.success('Shared successfully!');
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          handleCopy();
+        }
+      }
+    } else {
+      handleCopy();
+    }
+  };
+
+  const handleCopy = async () => {
+    const shareText = buildShareText();
+    
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      toast.success('Copied to clipboard!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast.error('Failed to copy');
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh]">
-        <DialogHeader>
+        <DialogHeader className="flex flex-row items-center justify-between pr-8">
           <DialogTitle className="font-card text-2xl">AI Psychological Analysis</DialogTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleShare}
+            className="flex items-center gap-2"
+          >
+            {copied ? (
+              <Check className="w-4 h-4" />
+            ) : navigator.share ? (
+              <Share2 className="w-4 h-4" />
+            ) : (
+              <Copy className="w-4 h-4" />
+            )}
+            {copied ? 'Copied!' : 'Share'}
+          </Button>
         </DialogHeader>
 
         <ScrollArea className="max-h-[60vh] pr-4">
