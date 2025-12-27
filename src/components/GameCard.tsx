@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 interface GameCardProps {
   card: CardType;
   isFavorite: boolean;
-  onChoice?: (choice: 'A' | 'B') => void;
+  onChoice?: (choice: string) => void;
   onFavorite: () => void;
   responseInputComponent?: React.ReactNode;
 }
@@ -50,6 +50,7 @@ const GameCard = ({ card, isFavorite, onChoice, onFavorite, responseInputCompone
               {['Say it', 'Sip it', 'Strip it'].map((action) => (
                 <Button
                   key={action}
+                  onClick={() => onChoice?.(action)}
                   variant="outline"
                   className="h-16 text-sm font-card border-2 border-secondary hover:bg-secondary/20 hover:border-secondary text-foreground"
                 >
