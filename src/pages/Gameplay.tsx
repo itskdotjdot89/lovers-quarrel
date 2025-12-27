@@ -319,7 +319,6 @@ const Gameplay = () => {
               
               // Build response text based on card type
               let responseText = '';
-              let questionText = currentCard.text;
               
               if (currentCard.subtype === 'this_or_that') {
                 responseText = `I chose: ${choice === 'A' ? currentCard.choiceA : currentCard.choiceB}`;
@@ -330,9 +329,7 @@ const Gameplay = () => {
               }
               
               toast.success(responseText);
-              
-              // Trigger AI analysis
-              await analyzeResponse(responseText, questionText);
+              // No AI analysis for choice-based cards - only open-ended questions get analyzed
             }}
             responseInputComponent={
               currentCard.subtype === 'open_ended' ? (
