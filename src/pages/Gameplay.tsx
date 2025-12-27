@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Users } from 'lucide-react';
+import { ArrowLeft, Users, Loader2 } from 'lucide-react';
 import GameCard from '@/components/GameCard';
 import AIAnalysisDialog from '@/components/AIAnalysisDialog';
 import MultiplayerResponseInput from '@/components/MultiplayerResponseInput';
@@ -31,6 +31,42 @@ const Gameplay = () => {
   const [currentUserDisplayName, setCurrentUserDisplayName] = useState('');
   const [loading, setLoading] = useState(true);
   const { presences, updateStatus } = usePresence(sessionId);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const analyzeResponse = async (responseText: string, questionText: string) => {
+    if (!currentCard) return;
+    
+    setIsAnalyzing(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please sign in to get AI insights');
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('analyze-response', {
+        body: {
+          responseText,
+          cardId: currentCard.id,
+          questionText
+        }
+      });
+
+      if (error) throw error;
+
+      setCurrentAnalysis({
+        text: data.analysis,
+        sentiment: data.sentiment,
+        themes: data.keyThemes
+      });
+      setShowAnalysisDialog(true);
+    } catch (error) {
+      console.error('Analysis error:', error);
+      toast.error('Failed to analyze response');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   useEffect(() => {
     if (sessionId) {
@@ -253,11 +289,20 @@ const Gameplay = () => {
           <div className="text-sm">{currentIndex + 1} / {totalCards}</div>
         </div>
         <div className="flex flex-col items-center">
+          {isAnalyzing && (
+            <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-foreground font-ui">Analyzing your response...</p>
+              </div>
+            </div>
+          )}
+          
           <GameCard 
             card={currentCard} 
             isFavorite={favorites.includes(currentCard.id)} 
             onFavorite={handleFavorite}
-            onChoice={currentCard.subtype === 'this_or_that' ? async (choice) => {
+            onChoice={async (choice) => {
               if (sessionId) {
                 // Multiplayer mode
                 const { data: { user } } = await supabase.auth.getUser();
@@ -270,8 +315,24 @@ const Gameplay = () => {
                   choice: choice
                 });
               }
-              toast.success(`You chose: ${choice === 'A' ? currentCard.choiceA : currentCard.choiceB}`);
-            } : undefined}
+              
+              // Build response text based on card type
+              let responseText = '';
+              let questionText = currentCard.text;
+              
+              if (currentCard.subtype === 'this_or_that') {
+                responseText = `I chose: ${choice === 'A' ? currentCard.choiceA : currentCard.choiceB}`;
+              } else if (currentCard.subtype === 'say_sip_strip') {
+                responseText = `I chose to: ${choice}`;
+              } else {
+                responseText = `My choice: ${choice}`;
+              }
+              
+              toast.success(responseText);
+              
+              // Trigger AI analysis
+              await analyzeResponse(responseText, questionText);
+            }}
             responseInputComponent={
               currentCard.subtype === 'open_ended' ? (
                 sessionId ? (
