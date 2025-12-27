@@ -104,7 +104,7 @@ const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
             className="w-32 h-auto mx-auto logo-glow"
           />
         ) : (
-          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
             <Icon className="w-10 h-10 text-primary" />
           </div>
         )}
