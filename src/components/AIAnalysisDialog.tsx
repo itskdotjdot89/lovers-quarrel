@@ -10,6 +10,7 @@ interface AIAnalysisDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   analysis: string;
+  question?: string;
   sentiment?: string;
   keyThemes?: string[];
 }
@@ -18,6 +19,7 @@ const AIAnalysisDialog = ({
   open,
   onOpenChange,
   analysis,
+  question,
   sentiment,
   keyThemes,
 }: AIAnalysisDialogProps) => {
@@ -25,6 +27,10 @@ const AIAnalysisDialog = ({
 
   const buildShareText = () => {
     let text = "💕 Lovers Quarrel - AI Insights\n\n";
+    
+    if (question) {
+      text += `Question: "${question}"\n\n`;
+    }
     
     if (sentiment) {
       text += `Emotional Tone: ${sentiment}\n\n`;

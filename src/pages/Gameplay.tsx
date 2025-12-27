@@ -22,7 +22,7 @@ const Gameplay = () => {
   const [currentCard, setCurrentCard] = useState<CardType | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
-  const [currentAnalysis, setCurrentAnalysis] = useState<{text: string; sentiment: string; themes: string[]} | null>(null);
+  const [currentAnalysis, setCurrentAnalysis] = useState<{text: string; sentiment: string; themes: string[]; question: string} | null>(null);
   const [responses, setResponses] = useState<any[]>([]);
   const [participants, setParticipants] = useState<any[]>([]);
   const [isHost, setIsHost] = useState(false);
@@ -57,7 +57,8 @@ const Gameplay = () => {
       setCurrentAnalysis({
         text: data.analysis,
         sentiment: data.sentiment,
-        themes: data.keyThemes
+        themes: data.keyThemes,
+        question: questionText
       });
       setShowAnalysisDialog(true);
     } catch (error) {
@@ -347,7 +348,7 @@ const Gameplay = () => {
                     cardId={currentCard.id}
                     questionText={currentCard.text}
                     onAnalysisComplete={(analysis, sentiment, themes) => {
-                      setCurrentAnalysis({ text: analysis, sentiment, themes });
+                      setCurrentAnalysis({ text: analysis, sentiment, themes, question: currentCard.text });
                       setShowAnalysisDialog(true);
                     }}
                   />
@@ -376,6 +377,7 @@ const Gameplay = () => {
         open={showAnalysisDialog} 
         onOpenChange={setShowAnalysisDialog} 
         analysis={currentAnalysis?.text || ''} 
+        question={currentAnalysis?.question}
         sentiment={currentAnalysis?.sentiment}
         keyThemes={currentAnalysis?.themes}
       />
