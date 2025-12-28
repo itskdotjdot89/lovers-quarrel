@@ -15,6 +15,9 @@ import Auth from "./pages/Auth";
 import Pricing from "./pages/Pricing";
 import ManageSubscription from "./pages/ManageSubscription";
 import Onboarding from "./pages/Onboarding";
+import Support from "./pages/Support";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +39,9 @@ const App = () => (
             <Route path="/play" element={<Gameplay />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
