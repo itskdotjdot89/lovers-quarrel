@@ -4,9 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Users, User } from 'lucide-react';
+import { Check, User, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { useNatively } from '@/hooks/useNatively';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 type BundleType = 'individual' | 'couple';
 
@@ -17,6 +19,8 @@ interface PricingPlan {
   monthlyPrice: number;
   stripeMonthlyPriceId: string;
   stripeProductId: string;
+  // RevenueCat package ID (set this in RevenueCat dashboard)
+  revenueCatPackageId: string;
   description: string;
   features: string[];
   maxUsers: number;
@@ -31,6 +35,7 @@ const pricingPlans: PricingPlan[] = [
     monthlyPrice: 5,
     stripeMonthlyPriceId: 'price_1STYUuLisf4T9XH8vUJvgxrt',
     stripeProductId: 'prod_TQPJuQMoKp9kuV',
+    revenueCatPackageId: '$rc_monthly', // Default RevenueCat monthly package ID
     description: 'Unlock everything',
     maxUsers: 1,
     features: [
@@ -50,19 +55,24 @@ const Pricing = () => {
   const { toast } = useToast();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(false);
-  const inviteCode = searchParams.get('invite');
   const fromOnboarding = searchParams.get('from') === 'onboarding';
+  
+  const { isNativeApp, isLoading: nativeLoading, loginToRevenueCat, purchasePackage, restorePurchases } = useNatively();
+  const { checkSubscription } = useSubscription();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       if (!user) {
         navigate('/auth');
+      } else if (isNativeApp) {
+        // Login to RevenueCat when in native app
+        loginToRevenueCat(user.id, user.email || '');
       }
     });
-  }, [navigate]);
+  }, [navigate, isNativeApp, loginToRevenueCat]);
 
-  const handleSubscribe = async (plan: PricingPlan) => {
+  const handleNativePurchase = async (plan: PricingPlan) => {
     if (!user) {
       navigate('/auth');
       return;
@@ -71,7 +81,72 @@ const Pricing = () => {
     setLoading(true);
 
     try {
-      // Call Stripe checkout edge function
+      const result = await purchasePackage(plan.revenueCatPackageId);
+      
+      if (result.status === 'SUCCESS') {
+        toast({
+          title: 'Purchase Successful!',
+          description: 'Welcome to Premium! Enjoy all features.'
+        });
+        // Refresh subscription status
+        await checkSubscription();
+        navigate('/home');
+      } else if (result.status === 'CANCELLED') {
+        toast({
+          title: 'Purchase Cancelled',
+          description: 'No worries, you can subscribe anytime.'
+        });
+      } else {
+        throw new Error(result.error || 'Purchase failed');
+      }
+    } catch (error: any) {
+      console.error('Native purchase error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Purchase Error',
+        description: error.message || 'Failed to complete purchase'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setLoading(true);
+    try {
+      const result = await restorePurchases();
+      if (result.status === 'SUCCESS') {
+        toast({
+          title: 'Purchases Restored',
+          description: 'Your subscription has been restored.'
+        });
+        await checkSubscription();
+      } else {
+        toast({
+          title: 'No Purchases Found',
+          description: 'No previous purchases were found to restore.'
+        });
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Restore Error',
+        description: error.message || 'Failed to restore purchases'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStripeSubscribe = async (plan: PricingPlan) => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { price_id: plan.stripeMonthlyPriceId }
       });
@@ -80,11 +155,9 @@ const Pricing = () => {
 
       if (data?.url) {
         if (fromOnboarding) {
-          // For onboarding flow, redirect in same window and mark onboarding complete after success
           window.location.href = data.url;
           localStorage.setItem('lq_trial_started', 'true');
         } else {
-          // For regular flow, open in new tab
           window.open(data.url, '_blank');
         }
         
@@ -102,6 +175,14 @@ const Pricing = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSubscribe = (plan: PricingPlan) => {
+    if (isNativeApp) {
+      handleNativePurchase(plan);
+    } else {
+      handleStripeSubscribe(plan);
     }
   };
 
@@ -177,14 +258,31 @@ const Pricing = () => {
         </div>
 
         <div className="text-center mt-8 text-sm text-muted-foreground">
-          <p>All plans include a 7-day free trial. No credit card required to start.</p>
-          <p className="mt-2">
-            Cancel anytime from your{' '}
-            <Link to="/settings" className="text-primary hover:underline">
-              account settings
-            </Link>
-            .
-          </p>
+          {isNativeApp ? (
+            <>
+              <Button
+                variant="ghost"
+                onClick={handleRestore}
+                disabled={loading || nativeLoading}
+                className="mb-4"
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Restore Purchases
+              </Button>
+              <p>Subscription will be charged to your Apple ID account.</p>
+            </>
+          ) : (
+            <>
+              <p>All plans include a 7-day free trial. No credit card required to start.</p>
+              <p className="mt-2">
+                Cancel anytime from your{' '}
+                <Link to="/settings" className="text-primary hover:underline">
+                  account settings
+                </Link>
+                .
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>
