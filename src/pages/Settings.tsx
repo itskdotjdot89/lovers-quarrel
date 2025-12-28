@@ -141,21 +141,33 @@ const Settings = () => {
             </div>
           </Card>
 
-          {/* Legal */}
+          {/* Legal & Support */}
           <Card className="p-6 bg-card border-2 border-border">
             <h2 className="font-display text-lg mb-3 text-foreground">
-              Legal
+              Legal & Support
             </h2>
             <div className="space-y-2 font-ui text-sm text-muted-foreground">
-              <button className="block hover:text-secondary transition-colors">
+              <button 
+                onClick={() => navigate('/privacy')}
+                className="block hover:text-secondary transition-colors"
+              >
                 Privacy Policy
               </button>
-              <button className="block hover:text-secondary transition-colors">
+              <button 
+                onClick={() => navigate('/terms')}
+                className="block hover:text-secondary transition-colors"
+              >
                 Terms of Service
               </button>
-              <button className="block hover:text-secondary transition-colors">
-                Content Warning
+              <button 
+                onClick={() => navigate('/support')}
+                className="block hover:text-secondary transition-colors"
+              >
+                Contact Support
               </button>
+              <p className="pt-2 text-xs">
+                18+ only • Play responsibly • Respect boundaries
+              </p>
             </div>
           </Card>
 
