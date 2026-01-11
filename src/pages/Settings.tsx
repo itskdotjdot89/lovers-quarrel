@@ -3,15 +3,29 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CreditCard, Check } from 'lucide-react';
+import { ArrowLeft, CreditCard, Check, Trash2, Loader2 } from 'lucide-react';
 import { SpiceLevel } from '@/types/game';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [intensity, setIntensity] = useState<SpiceLevel>('standard');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { subscribed, loading: subLoading } = useSubscription();
 
   useEffect(() => {
@@ -41,6 +55,43 @@ const Settings = () => {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate('/');
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to delete your account",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await supabase.functions.invoke('delete-account');
+      
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      localStorage.clear();
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been permanently deleted",
+      });
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete account. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -178,23 +229,60 @@ const Settings = () => {
             </h2>
             <div className="space-y-2">
               {isLoggedIn && (
-                <Button
-                  onClick={handleSignOut}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Sign Out
-                </Button>
+                <>
+                  <Button
+                    onClick={handleSignOut}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Sign Out
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        className="w-full"
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4 mr-2" />
+                        )}
+                        Delete Account
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete your
+                          account and remove all your data including favorites, responses,
+                          and subscription information.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDeleteAccount}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete Account
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
               )}
               <Button
                 onClick={handleReset}
-                variant="destructive"
+                variant="outline"
                 className="w-full"
               >
                 Reset All Data
               </Button>
               <p className="text-xs text-muted-foreground font-ui mt-2">
-                This will clear all favorites and preferences
+                Reset clears local favorites and preferences
               </p>
             </div>
           </Card>
