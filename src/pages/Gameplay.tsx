@@ -32,8 +32,9 @@ const Gameplay = () => {
   const [loading, setLoading] = useState(true);
   const { presences, updateStatus } = usePresence(sessionId);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [pendingChoice, setPendingChoice] = useState<{ choice: string; responseText: string } | null>(null);
 
-  const analyzeResponse = async (responseText: string, questionText: string) => {
+  const analyzeChoice = async (responseText: string) => {
     if (!currentCard) return;
     
     setIsAnalyzing(true);
@@ -48,7 +49,8 @@ const Gameplay = () => {
         body: {
           responseText,
           cardId: currentCard.id,
-          questionText
+          questionText: currentCard.text,
+          deckId: currentCard.deckId
         }
       });
 
@@ -58,15 +60,20 @@ const Gameplay = () => {
         text: data.analysis,
         sentiment: data.sentiment,
         themes: data.keyThemes,
-        question: questionText
+        question: currentCard.text
       });
       setShowAnalysisDialog(true);
+      setPendingChoice(null);
     } catch (error) {
       console.error('Analysis error:', error);
       toast.error('Failed to analyze response');
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const skipAnalysis = () => {
+    setPendingChoice(null);
   };
 
   useEffect(() => {
@@ -321,7 +328,7 @@ const Gameplay = () => {
               let responseText = '';
               
               if (currentCard.subtype === 'this_or_that') {
-                responseText = `I chose: ${choice === 'A' ? currentCard.choiceA : currentCard.choiceB}`;
+                responseText = `I chose "${choice === 'A' ? currentCard.choiceA : currentCard.choiceB}" over "${choice === 'A' ? currentCard.choiceB : currentCard.choiceA}"`;
               } else if (currentCard.subtype === 'say_sip_strip') {
                 responseText = `I chose to: ${choice}`;
               } else {
@@ -329,7 +336,8 @@ const Gameplay = () => {
               }
               
               toast.success(responseText);
-              // No AI analysis for choice-based cards - only open-ended questions get analyzed
+              // Set pending choice to show AI analysis option
+              setPendingChoice({ choice, responseText });
             }}
             responseInputComponent={
               currentCard.subtype === 'open_ended' ? (
@@ -364,6 +372,31 @@ const Gameplay = () => {
                 participants={participants}
                 presences={presences}
               />
+            </div>
+          )}
+          {pendingChoice && (
+            <div className="mt-4 w-full max-w-2xl">
+              <Card className="p-4 bg-muted/30 border-secondary/30">
+                <p className="text-sm text-muted-foreground mb-3 text-center">
+                  Want AI insights on your choice?
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={skipAnalysis}
+                  >
+                    Skip
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => analyzeChoice(pendingChoice.responseText)}
+                    className="bg-secondary hover:bg-secondary/90"
+                  >
+                    Get AI Insights
+                  </Button>
+                </div>
+              </Card>
             </div>
           )}
           <div className="flex gap-3 mt-6">
