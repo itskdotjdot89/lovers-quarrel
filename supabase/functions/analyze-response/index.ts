@@ -7,6 +7,60 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+type DeckMood = 'freaky' | 'real_talk' | 'love_drunk';
+type AnalysisDepth = 'brief' | 'standard' | 'deep';
+
+const DECK_PERSONAS: Record<DeckMood, { name: string; tone: string; focus: string }> = {
+  freaky: {
+    name: 'Playful Intimacy Coach',
+    tone: 'fun, flirty, and lighthearted with a wink',
+    focus: 'intimacy exploration, comfort with desire, playful communication between partners'
+  },
+  real_talk: {
+    name: 'Relationship Depth Counselor',
+    tone: 'warm, thoughtful, and genuinely curious',
+    focus: 'emotional vulnerability, deeper connection, understanding each other\'s inner worlds'
+  },
+  love_drunk: {
+    name: 'Romantic Connection Guide',
+    tone: 'romantic, dreamy, and celebratory of love',
+    focus: 'appreciation, romance, cherishing the relationship and building memories together'
+  }
+};
+
+const DEPTH_CONFIG: Record<AnalysisDepth, { instructions: string; maxTokens: number }> = {
+  brief: {
+    instructions: 'Keep your response to 2-3 sentences. Focus on one key insight and one actionable suggestion.',
+    maxTokens: 300
+  },
+  standard: {
+    instructions: 'Provide a balanced analysis: identify the emotional sentiment, 2-3 key themes, and 1-2 paragraphs of insights with a practical suggestion for the couple.',
+    maxTokens: 600
+  },
+  deep: {
+    instructions: 'Provide a comprehensive exploration: identify emotional layers and nuances, 3-4 key themes with explanations, explore underlying relationship dynamics, communication patterns, and offer 2-3 specific conversation starters or exercises for the couple.',
+    maxTokens: 1000
+  }
+};
+
+const buildSystemPrompt = (deckId: DeckMood | null, depth: AnalysisDepth): string => {
+  const persona = deckId ? DECK_PERSONAS[deckId] : DECK_PERSONAS.real_talk;
+  const depthConfig = DEPTH_CONFIG[depth];
+  
+  return `You are the "${persona.name}" – a relationship psychology expert with a ${persona.tone} approach. Your specialty is ${persona.focus}.
+
+Analyze the user's response to an intimate couples question. Be supportive, non-judgmental, and encouraging.
+
+${depthConfig.instructions}
+
+Structure your response:
+1. **Emotional Tone**: One word (positive/neutral/reflective/vulnerable/playful/passionate)
+2. **Key Themes**: List 2-4 themes that emerged
+3. **Insights**: Your analysis based on the depth requested
+
+Remember: This is about helping couples connect deeper. Celebrate vulnerability, encourage honest communication, and highlight growth opportunities.`;
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -29,7 +83,7 @@ serve(async (req) => {
       throw new Error('User not authenticated');
     }
 
-    const { responseText, cardId, questionText } = await req.json();
+    const { responseText, cardId, questionText, deckId, depth = 'standard' } = await req.json();
     
     // Input validation
     if (!responseText || typeof responseText !== 'string') {
@@ -53,10 +107,21 @@ serve(async (req) => {
       throw new Error('Question text exceeds maximum length of 1,000 characters');
     }
 
+    // Validate depth
+    const validDepths: AnalysisDepth[] = ['brief', 'standard', 'deep'];
+    const analysisDepth: AnalysisDepth = validDepths.includes(depth) ? depth : 'standard';
+    
+    // Validate deckId
+    const validDecks: DeckMood[] = ['freaky', 'real_talk', 'love_drunk'];
+    const validatedDeckId: DeckMood | null = deckId && validDecks.includes(deckId) ? deckId : null;
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
+
+    const systemPrompt = buildSystemPrompt(validatedDeckId, analysisDepth);
+    const depthConfig = DEPTH_CONFIG[analysisDepth];
 
     // Call Lovable AI for psychological analysis
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -66,24 +131,19 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3-flash-preview',
         messages: [
           {
             role: 'system',
-            content: `You are a relationship psychology expert analyzing responses to intimate questions. Provide thoughtful, empathetic insights about the person's emotional state, communication style, and relationship dynamics based on their answer. Be supportive and constructive. Structure your analysis with:
-1. Sentiment (positive/neutral/reflective/vulnerable)
-2. Key themes (2-3 main themes)
-3. Psychological insights (2-3 paragraphs of empathetic analysis)
-
-Keep the tone warm, non-judgmental, and encouraging.`
+            content: systemPrompt
           },
           {
             role: 'user',
-            content: `Question: "${questionText || 'Unknown question'}"\n\nResponse: "${responseText}"\n\nPlease provide a psychological analysis of this response.`
+            content: `Question: "${questionText || 'Unknown question'}"\n\nTheir Response: "${responseText}"\n\nProvide your analysis.`
           }
         ],
         temperature: 0.7,
-        max_tokens: 800
+        max_tokens: depthConfig.maxTokens
       }),
     });
 
@@ -97,12 +157,17 @@ Keep the tone warm, non-judgmental, and encouraging.`
     const analysisText = aiResult.choices[0].message.content;
 
     // Parse the analysis to extract structured data
-    const sentimentMatch = analysisText.match(/sentiment[:\s]*(\w+)/i);
+    const sentimentMatch = analysisText.match(/(?:emotional\s*tone|sentiment)[:\s]*\**(\w+)\**/i);
     const sentiment = sentimentMatch ? sentimentMatch[1].toLowerCase() : 'neutral';
     
-    const themesMatch = analysisText.match(/themes?[:\s]*(.+?)(?=\n\n|\d\.|$)/is);
+    const themesMatch = analysisText.match(/(?:key\s*)?themes?[:\s]*(.+?)(?=\n\n|\d\.|insights?:|$)/is);
     const keyThemes = themesMatch 
-      ? themesMatch[1].split(/[,\n]/).map((t: string) => t.trim()).filter((t: string) => t && t.length > 3).slice(0, 3)
+      ? themesMatch[1]
+          .replace(/\*\*/g, '')
+          .split(/[,\n•\-]/)
+          .map((t: string) => t.trim())
+          .filter((t: string) => t && t.length > 3 && t.length < 50)
+          .slice(0, 4)
       : [];
 
     // Store response in database
@@ -146,7 +211,9 @@ Keep the tone warm, non-judgmental, and encouraging.`
         sentiment,
         keyThemes,
         responseId: responseData.id,
-        analysisId: analysisData.id
+        analysisId: analysisData.id,
+        depth: analysisDepth,
+        deckId: validatedDeckId
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

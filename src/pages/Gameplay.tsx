@@ -344,6 +344,7 @@ const Gameplay = () => {
                   <OpenEndedInput
                     cardId={currentCard.id}
                     questionText={currentCard.text}
+                    deckId={currentCard.deckId}
                     onAnalysisComplete={(analysis, sentiment, themes) => {
                       setCurrentAnalysis({ text: analysis, sentiment, themes, question: currentCard.text });
                       setShowAnalysisDialog(true);
