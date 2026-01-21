@@ -1,8 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Uncial+Antiqua&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Modern Game Design System - Bold, Immersive, Dynamic */
+/* 3D Card Flip Animation */
+.card-flip-container {
+  perspective: 1200px;
+}
+
+.card-flip {
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-flip.flipping {
+  transform: rotateY(180deg);
+}
+
+.card-flip-front,
+.card-flip-back {
+  backface-visibility: hidden;
+}
+
+.card-flip-back {
+  transform: rotateY(180deg);
+  position: absolute;
+  inset: 0;
+}
 
 @layer base {
   :root {

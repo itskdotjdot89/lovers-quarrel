@@ -9,9 +9,10 @@ interface GameCardProps {
   onChoice?: (choice: string) => void;
   onFavorite: () => void;
   responseInputComponent?: React.ReactNode;
+  isFlipping?: boolean;
 }
 
-const GameCard = ({ card, isFavorite, onChoice, onFavorite, responseInputComponent }: GameCardProps) => {
+const GameCard = ({ card, isFavorite, onChoice, onFavorite, responseInputComponent, isFlipping = false }: GameCardProps) => {
   const renderCardContent = () => {
     switch (card.subtype) {
       case 'this_or_that':
@@ -93,13 +94,33 @@ const GameCard = ({ card, isFavorite, onChoice, onFavorite, responseInputCompone
   };
 
   return (
-    <div className="relative w-full max-w-2xl perspective">
+    <div className="relative w-full max-w-2xl card-flip-container">
       {/* Glow effect behind card */}
       <div className="absolute inset-4 bg-crimson-vivid/10 rounded-3xl blur-2xl" />
       
-      <div className="relative glass rounded-2xl border border-border/50 p-8 shadow-elevated animate-scale-in">
-        {/* Decorative corner accents */}
-        <div className="absolute top-0 left-0 w-16 h-16 border-l-2 border-t-2 border-crimson-vivid/30 rounded-tl-2xl" />
+      <div className={cn(
+        "relative card-flip",
+        isFlipping && "flipping"
+      )}>
+        {/* Card back (shown during flip) */}
+        <div className="card-flip-back glass rounded-2xl border border-border/50 p-8 shadow-elevated">
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-crimson-vivid/20 via-background to-crimson-deep/20" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-24 h-24 rounded-full bg-crimson-vivid/20 flex items-center justify-center border-2 border-crimson-vivid/40">
+              <span className="font-display text-3xl text-crimson-glow">LQ</span>
+            </div>
+          </div>
+          {/* Decorative corner accents on back */}
+          <div className="absolute top-0 left-0 w-16 h-16 border-l-2 border-t-2 border-crimson-vivid/30 rounded-tl-2xl" />
+          <div className="absolute top-0 right-0 w-16 h-16 border-r-2 border-t-2 border-crimson-vivid/30 rounded-tr-2xl" />
+          <div className="absolute bottom-0 left-0 w-16 h-16 border-l-2 border-b-2 border-crimson-vivid/30 rounded-bl-2xl" />
+          <div className="absolute bottom-0 right-0 w-16 h-16 border-r-2 border-b-2 border-crimson-vivid/30 rounded-br-2xl" />
+        </div>
+        
+        {/* Card front */}
+        <div className="card-flip-front relative glass rounded-2xl border border-border/50 p-8 shadow-elevated">
+          {/* Decorative corner accents */}
+          <div className="absolute top-0 left-0 w-16 h-16 border-l-2 border-t-2 border-crimson-vivid/30 rounded-tl-2xl" />
         <div className="absolute top-0 right-0 w-16 h-16 border-r-2 border-t-2 border-crimson-vivid/30 rounded-tr-2xl" />
         <div className="absolute bottom-0 left-0 w-16 h-16 border-l-2 border-b-2 border-crimson-vivid/30 rounded-bl-2xl" />
         <div className="absolute bottom-0 right-0 w-16 h-16 border-r-2 border-b-2 border-crimson-vivid/30 rounded-br-2xl" />
@@ -136,9 +157,10 @@ const GameCard = ({ card, isFavorite, onChoice, onFavorite, responseInputCompone
           {card.spice}
         </div>
         
-        {/* Card content */}
-        <div className="mt-12 mb-4">
-          {renderCardContent()}
+          {/* Card content */}
+          <div className="mt-12 mb-4">
+            {renderCardContent()}
+          </div>
         </div>
       </div>
     </div>

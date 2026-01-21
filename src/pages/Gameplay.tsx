@@ -32,6 +32,7 @@ const Gameplay = () => {
   const { presences, updateStatus } = usePresence(sessionId);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [pendingChoice, setPendingChoice] = useState<{ choice: string; responseText: string; cardSubtype: string } | null>(null);
+  const [isFlipping, setIsFlipping] = useState(false);
   const [sayItResponse, setSayItResponse] = useState('');
 
   const analyzeChoice = async (responseText: string) => {
@@ -241,13 +242,23 @@ const Gameplay = () => {
         toast.error('Only host can advance');
         return;
       }
-      await supabase.from('game_sessions').update({ current_card_index: currentIndex + 1 }).eq('id', sessionId);
+      // Trigger flip animation
+      setIsFlipping(true);
+      setTimeout(async () => {
+        await supabase.from('game_sessions').update({ current_card_index: currentIndex + 1 }).eq('id', sessionId);
+        setIsFlipping(false);
+      }, 300);
     } else {
       const nextIndex = currentIndex + 1;
       
       if (nextIndex < cards.length) {
-        setCurrentCard(cards[nextIndex]);
-        setCurrentIndex(nextIndex);
+        // Trigger flip animation
+        setIsFlipping(true);
+        setTimeout(() => {
+          setCurrentCard(cards[nextIndex]);
+          setCurrentIndex(nextIndex);
+          setIsFlipping(false);
+        }, 300);
       } else {
         toast.info('No more cards in this session');
       }
@@ -339,7 +350,8 @@ const Gameplay = () => {
           
           <GameCard 
             card={currentCard} 
-            isFavorite={favorites.includes(currentCard.id)} 
+            isFavorite={favorites.includes(currentCard.id)}
+            isFlipping={isFlipping}
             onFavorite={handleFavorite}
             onChoice={async (choice) => {
               if (sessionId) {
