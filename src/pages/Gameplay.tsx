@@ -32,7 +32,8 @@ const Gameplay = () => {
   const [loading, setLoading] = useState(true);
   const { presences, updateStatus } = usePresence(sessionId);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [pendingChoice, setPendingChoice] = useState<{ choice: string; responseText: string } | null>(null);
+  const [pendingChoice, setPendingChoice] = useState<{ choice: string; responseText: string; cardSubtype: string } | null>(null);
+  const [sayItResponse, setSayItResponse] = useState('');
 
   const analyzeChoice = async (responseText: string) => {
     if (!currentCard) return;
@@ -74,6 +75,7 @@ const Gameplay = () => {
 
   const skipAnalysis = () => {
     setPendingChoice(null);
+    setSayItResponse('');
   };
 
   useEffect(() => {
@@ -337,7 +339,7 @@ const Gameplay = () => {
               
               toast.success(responseText);
               // Set pending choice to show AI analysis option
-              setPendingChoice({ choice, responseText });
+              setPendingChoice({ choice, responseText, cardSubtype: currentCard.subtype });
             }}
             responseInputComponent={
               currentCard.subtype === 'open_ended' ? (
@@ -380,6 +382,20 @@ const Gameplay = () => {
                 <p className="text-sm text-muted-foreground mb-3 text-center">
                   Want AI insights on your choice?
                 </p>
+                
+                {/* Show input box for "Say it" choice */}
+                {pendingChoice.cardSubtype === 'say_sip_strip' && pendingChoice.choice === 'Say it' && (
+                  <div className="mb-4">
+                    <textarea
+                      value={sayItResponse}
+                      onChange={(e) => setSayItResponse(e.target.value)}
+                      placeholder="What did you say? Share your response for AI insights..."
+                      className="w-full p-3 rounded-lg border border-secondary/30 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary/50 resize-none"
+                      rows={3}
+                    />
+                  </div>
+                )}
+                
                 <div className="flex gap-3 justify-center">
                   <Button
                     variant="outline"
@@ -390,7 +406,14 @@ const Gameplay = () => {
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => analyzeChoice(pendingChoice.responseText)}
+                    onClick={() => {
+                      const responseText = pendingChoice.cardSubtype === 'say_sip_strip' && pendingChoice.choice === 'Say it' && sayItResponse.trim()
+                        ? `I chose to say: "${sayItResponse.trim()}"`
+                        : pendingChoice.responseText;
+                      analyzeChoice(responseText);
+                      setSayItResponse('');
+                    }}
+                    disabled={pendingChoice.cardSubtype === 'say_sip_strip' && pendingChoice.choice === 'Say it' && !sayItResponse.trim()}
                     className="bg-secondary hover:bg-secondary/90"
                   >
                     Get AI Insights
