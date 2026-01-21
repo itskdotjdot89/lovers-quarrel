@@ -213,12 +213,12 @@ const Settings = () => {
                   variant={analysisDepth === depth ? 'default' : 'outline'}
                   className={
                     analysisDepth === depth
-                      ? 'bg-secondary hover:bg-secondary/90 text-foreground flex-col h-auto py-3'
-                      : 'border-border text-muted-foreground hover:border-secondary flex-col h-auto py-3'
+                      ? 'bg-secondary hover:bg-secondary/90 text-foreground flex-col h-auto py-3 whitespace-normal'
+                      : 'border-border text-muted-foreground hover:border-secondary flex-col h-auto py-3 whitespace-normal'
                   }
                 >
                   <span className="font-card">{DEPTH_CONFIG[depth].label}</span>
-                  <span className="text-xs opacity-70 mt-1">{DEPTH_CONFIG[depth].description}</span>
+                  <span className="text-xs opacity-70 mt-1 text-center">{DEPTH_CONFIG[depth].description}</span>
                 </Button>
               ))}
             </div>
