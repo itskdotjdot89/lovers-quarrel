@@ -30,16 +30,16 @@ const DECK_PERSONAS: Record<DeckMood, { name: string; tone: string; focus: strin
 
 const DEPTH_CONFIG: Record<AnalysisDepth, { instructions: string; maxTokens: number }> = {
   brief: {
-    instructions: 'Keep your response to 2-3 sentences. Focus on one key insight and one actionable suggestion.',
-    maxTokens: 300
+    instructions: 'Keep your response to 2-3 sentences in a single paragraph. Focus on one key insight and one actionable suggestion.',
+    maxTokens: 250
   },
   standard: {
-    instructions: 'Provide a balanced analysis: identify the emotional sentiment, 2-3 key themes, and 1-2 paragraphs of insights with a practical suggestion for the couple.',
-    maxTokens: 600
+    instructions: 'Provide a balanced analysis in NO MORE than 2 short paragraphs: identify the emotional sentiment, 2-3 key themes, and practical insights for the couple. Be concise.',
+    maxTokens: 400
   },
   deep: {
-    instructions: 'Provide a comprehensive exploration: identify emotional layers and nuances, 3-4 key themes with explanations, explore underlying relationship dynamics, communication patterns, and offer 2-3 specific conversation starters or exercises for the couple.',
-    maxTokens: 1000
+    instructions: 'Provide a thoughtful exploration in NO MORE than 2 paragraphs: identify emotional layers, 3-4 key themes, relationship dynamics, and offer 1-2 specific conversation starters. Keep it focused and actionable.',
+    maxTokens: 500
   }
 };
 
