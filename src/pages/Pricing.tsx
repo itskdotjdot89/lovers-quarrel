@@ -239,9 +239,11 @@ const Pricing = () => {
                   className="w-full"
                   variant={plan.popular ? 'default' : 'outline'}
                   onClick={() => handleSubscribe(plan)}
-                  disabled={loading}
+                  disabled={loading || nativeLoading}
                 >
-                  {fromOnboarding ? 'Start Free Trial & Play' : 'Start 7-Day Free Trial'}
+                  {isNativeApp 
+                    ? 'Subscribe Now' 
+                    : (fromOnboarding ? 'Start Free Trial & Play' : 'Start 7-Day Free Trial')}
                 </Button>
 
                 <div className="space-y-3">
@@ -270,6 +272,9 @@ const Pricing = () => {
                 Restore Purchases
               </Button>
               <p>Subscription will be charged to your Apple ID account.</p>
+              <p className="mt-2">
+                Manage your subscription in iOS Settings → your name → Subscriptions.
+              </p>
             </>
           ) : (
             <>
