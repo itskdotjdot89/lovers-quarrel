@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Heart, Flame, MessageCircle, Users } from 'lucide-react';
+import { Heart, Flame, MessageCircle, Users, ChevronRight, Sparkles } from 'lucide-react';
 import ProgressIndicator from './ProgressIndicator';
 import loversQuarrelLogo from '@/assets/lovers-quarrel-logo.png';
 
@@ -14,25 +13,29 @@ const screens = [
     icon: Heart,
     title: "Welcome to Lovers' Quarrel",
     subtitle: "The card game that brings you closer",
-    description: "Deep conversations, playful moments, and genuine connection through thoughtfully crafted prompts."
+    description: "Deep conversations, playful moments, and genuine connection through thoughtfully crafted prompts.",
+    accent: 'crimson'
   },
   {
     icon: MessageCircle,
     title: "Choose Your Mood",
     subtitle: "Three unique decks to explore",
-    description: "From Freaky and flirty to Real Talk and Love Drunk - mix and match to set the perfect vibe for your moment together."
+    description: "From Freaky and flirty to Real Talk and Love Drunk - mix and match to set the perfect vibe.",
+    accent: 'purple'
   },
   {
     icon: Flame,
-    title: "Set Your Comfort Level",
+    title: "Set Your Heat Level",
     subtitle: "You're always in control",
-    description: "Choose Soft, Standard, or Spicy intensity. Pass on any card at any time - your boundaries matter most."
+    description: "Choose Soft, Standard, or Spicy intensity. Pass on any card at any time.",
+    accent: 'gold'
   },
   {
     icon: Users,
     title: "Play Your Way",
-    subtitle: "In-person or long-distance",
-    description: "Perfect for solo play, in-person dates, or long-distance connections. Practice conversation topics on your own time."
+    subtitle: "Together or apart",
+    description: "Perfect for solo play, in-person dates, or long-distance connections.",
+    accent: 'teal'
   }
 ];
 
@@ -72,10 +75,8 @@ const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
 
     if (Math.abs(swipeDistance) > minSwipeDistance) {
       if (swipeDistance > 0) {
-        // Swipe left - next screen
         handleNext();
       } else {
-        // Swipe right - previous screen
         handlePrevious();
       }
     }
@@ -89,57 +90,102 @@ const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
   const Icon = screen.icon;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 flex items-center justify-center p-4">
-      <Card 
-        className="w-full max-w-md p-8 space-y-8 transition-transform duration-200"
-        style={{ transform: `translateX(${swipeOffset * 0.3}px)` }}
+    <div className="min-h-screen bg-gradient-game flex items-center justify-center p-4 overflow-hidden">
+      {/* Animated background particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-crimson-vivid/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+      
+      <div 
+        className="relative w-full max-w-md"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {currentScreen === 0 ? (
-          <img 
-            src={loversQuarrelLogo} 
-            alt="Lovers' Quarrel" 
-            className="w-32 h-auto mx-auto logo-glow"
-          />
-        ) : (
-          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-            <Icon className="w-10 h-10 text-primary" />
-          </div>
-        )}
-
-        <div className="space-y-4 text-center">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            {screen.title}
-          </h1>
-          <p className="text-lg font-semibold text-foreground">
-            {screen.subtitle}
-          </p>
-          <p className="text-muted-foreground">
-            {screen.description}
-          </p>
-        </div>
-
-        <ProgressIndicator currentStep={currentScreen} totalSteps={screens.length} />
-
-        <Button
-          onClick={handleNext}
-          className="w-full h-12 text-lg"
+        {/* Main card with glassmorphism */}
+        <div 
+          className="glass rounded-2xl p-8 space-y-8 shadow-elevated transition-transform duration-200 animate-scale-in"
+          style={{ transform: `translateX(${swipeOffset * 0.3}px)` }}
         >
-          {currentScreen < screens.length - 1 ? 'Next' : "Let's Start"}
-        </Button>
+          {/* Icon/Logo section */}
+          <div className="relative">
+            {currentScreen === 0 ? (
+              <div className="relative">
+                <img 
+                  src={loversQuarrelLogo} 
+                  alt="Lovers' Quarrel" 
+                  className="w-36 h-auto mx-auto logo-glow float"
+                />
+                <Sparkles className="absolute -top-2 -right-4 w-6 h-6 text-crimson-glow animate-pulse" />
+              </div>
+            ) : (
+              <div className="relative w-24 h-24 mx-auto">
+                <div className="absolute inset-0 bg-gradient-to-br from-crimson-vivid/30 to-purple/20 rounded-2xl blur-xl" />
+                <div className="relative w-full h-full rounded-2xl bg-gradient-to-br from-muted to-card flex items-center justify-center border border-border/50">
+                  <Icon className="w-12 h-12 text-crimson-glow" />
+                </div>
+              </div>
+            )}
+          </div>
 
-        {currentScreen > 0 && (
-          <Button
-            variant="ghost"
-            onClick={handlePrevious}
-            className="w-full"
+          {/* Content */}
+          <div className="space-y-4 text-center">
+            <h1 className="text-3xl md:text-4xl font-display text-glow-soft text-foreground">
+              {screen.title}
+            </h1>
+            <p className="text-lg font-semibold text-crimson-soft">
+              {screen.subtitle}
+            </p>
+            <p className="text-muted-foreground font-card text-lg leading-relaxed">
+              {screen.description}
+            </p>
+          </div>
+
+          {/* Progress */}
+          <ProgressIndicator currentStep={currentScreen} totalSteps={screens.length} />
+
+          {/* Actions */}
+          <div className="space-y-3">
+            <Button
+              onClick={handleNext}
+              className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid transition-all duration-300 btn-glow group"
+            >
+              {currentScreen < screens.length - 1 ? (
+                <>
+                  Continue
+                  <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                </>
+              ) : (
+                <>
+                  Let's Begin
+                  <Sparkles className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
+                </>
+              )}
+            </Button>
+
+            {currentScreen > 0 && (
+              <Button
+                variant="ghost"
+                onClick={handlePrevious}
+                className="w-full text-muted-foreground hover:text-foreground"
+              >
+                Back
+              </Button>
+            )}
+          </div>
+        </div>
+        
+        {/* Skip button */}
+        {currentScreen < screens.length - 1 && (
+          <button
+            onClick={onComplete}
+            className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Back
-          </Button>
+            Skip intro
+          </button>
         )}
-      </Card>
+      </div>
     </div>
   );
 };

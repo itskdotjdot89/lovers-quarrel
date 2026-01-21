@@ -1,7 +1,6 @@
 import { Card as CardType } from '@/types/game';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart } from 'lucide-react';
+import { Heart, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface GameCardProps {
@@ -17,24 +16,27 @@ const GameCard = ({ card, isFavorite, onChoice, onFavorite, responseInputCompone
     switch (card.subtype) {
       case 'this_or_that':
         return (
-          <div className="space-y-6">
-            <p className="font-card text-2xl leading-relaxed text-center text-foreground mb-8">
+          <div className="space-y-8">
+            <p className="font-card text-2xl md:text-3xl leading-relaxed text-center text-foreground">
               {card.text}
             </p>
             <div className="grid grid-cols-1 gap-4">
               <Button
                 onClick={() => onChoice?.('A')}
                 variant="outline"
-                className="h-auto py-6 text-lg font-card border-2 border-secondary hover:bg-secondary/20 hover:border-secondary text-foreground"
+                className="h-auto py-5 px-6 text-lg font-card border-2 border-crimson-vivid/50 hover:border-crimson-glow hover:bg-crimson-vivid/10 text-foreground transition-all duration-300 group"
               >
-                {card.choiceA}
+                <span className="group-hover:text-glow-soft transition-all">{card.choiceA}</span>
               </Button>
+              <div className="flex items-center justify-center">
+                <span className="text-xs text-muted-foreground uppercase tracking-widest">or</span>
+              </div>
               <Button
                 onClick={() => onChoice?.('B')}
                 variant="outline"
-                className="h-auto py-6 text-lg font-card border-2 border-secondary hover:bg-secondary/20 hover:border-secondary text-foreground"
+                className="h-auto py-5 px-6 text-lg font-card border-2 border-crimson-vivid/50 hover:border-crimson-glow hover:bg-crimson-vivid/10 text-foreground transition-all duration-300 group"
               >
-                {card.choiceB}
+                <span className="group-hover:text-glow-soft transition-all">{card.choiceB}</span>
               </Button>
             </div>
           </div>
@@ -43,18 +45,23 @@ const GameCard = ({ card, isFavorite, onChoice, onFavorite, responseInputCompone
       case 'say_sip_strip':
         return (
           <div className="space-y-8">
-            <p className="font-card text-2xl leading-relaxed text-center text-foreground">
+            <p className="font-card text-2xl md:text-3xl leading-relaxed text-center text-foreground">
               {card.text}
             </p>
             <div className="grid grid-cols-3 gap-3">
-              {['Say it', 'Sip it', 'Strip it'].map((action) => (
+              {[
+                { label: 'Say it', icon: '💬' },
+                { label: 'Sip it', icon: '🍷' },
+                { label: 'Strip it', icon: '🔥' }
+              ].map(({ label, icon }) => (
                 <Button
-                  key={action}
-                  onClick={() => onChoice?.(action)}
+                  key={label}
+                  onClick={() => onChoice?.(label)}
                   variant="outline"
-                  className="h-16 text-sm font-card border-2 border-secondary hover:bg-secondary/20 hover:border-secondary text-foreground"
+                  className="h-20 flex-col gap-1 text-sm font-card border-2 border-crimson-vivid/50 hover:border-crimson-glow hover:bg-crimson-vivid/10 text-foreground transition-all duration-300 group"
                 >
-                  {action}
+                  <span className="text-2xl group-hover:scale-110 transition-transform">{icon}</span>
+                  <span className="group-hover:text-crimson-glow transition-colors">{label}</span>
                 </Button>
               ))}
             </div>
@@ -65,8 +72,8 @@ const GameCard = ({ card, isFavorite, onChoice, onFavorite, responseInputCompone
       default:
         return (
           <div className="space-y-6">
-            <div className="flex items-center justify-center min-h-[120px]">
-              <p className="font-card text-2xl leading-relaxed text-center text-foreground px-4">
+            <div className="flex items-center justify-center min-h-[140px]">
+              <p className="font-card text-2xl md:text-3xl leading-relaxed text-center text-foreground px-2">
                 {card.text}
               </p>
             </div>
@@ -76,47 +83,65 @@ const GameCard = ({ card, isFavorite, onChoice, onFavorite, responseInputCompone
     }
   };
 
+  const getSpiceColor = () => {
+    switch (card.spice) {
+      case 'soft': return 'text-teal bg-teal/10 border-teal/30';
+      case 'standard': return 'text-gold bg-gold/10 border-gold/30';
+      case 'spicy': return 'text-crimson-glow bg-crimson-vivid/10 border-crimson-vivid/30';
+      default: return 'text-muted-foreground bg-muted/50 border-muted';
+    }
+  };
+
   return (
-    <Card className="relative bg-card border-2 border-secondary card-shadow p-8 max-w-2xl w-full">
-      {/* Wax seal watermark */}
-      <div className="absolute bottom-4 right-4 opacity-5 text-secondary">
-        <svg width="60" height="60" viewBox="0 0 100 100" fill="currentColor">
-          <circle cx="50" cy="50" r="45" />
-          <text
-            x="50"
-            y="65"
-            fontSize="36"
-            fontFamily="var(--font-display)"
-            textAnchor="middle"
-            fill="white"
-          >
-            LQ
-          </text>
-        </svg>
-      </div>
+    <div className="relative w-full max-w-2xl perspective">
+      {/* Glow effect behind card */}
+      <div className="absolute inset-4 bg-crimson-vivid/10 rounded-3xl blur-2xl" />
       
-      {/* Favorite button */}
-      <button
-        onClick={onFavorite}
-        className={cn(
-          "absolute top-4 right-4 p-2 rounded-full transition-colors z-10",
-          isFavorite 
-            ? "text-secondary" 
-            : "text-muted-foreground hover:text-secondary"
-        )}
-      >
-        <Heart className={cn("w-6 h-6", isFavorite && "fill-current")} />
-      </button>
-      
-      {/* Spice indicator */}
-      <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-muted/50 text-xs font-ui text-muted-foreground capitalize">
-        {card.spice}
+      <div className="relative glass rounded-2xl border border-border/50 p-8 shadow-elevated animate-scale-in">
+        {/* Decorative corner accents */}
+        <div className="absolute top-0 left-0 w-16 h-16 border-l-2 border-t-2 border-crimson-vivid/30 rounded-tl-2xl" />
+        <div className="absolute top-0 right-0 w-16 h-16 border-r-2 border-t-2 border-crimson-vivid/30 rounded-tr-2xl" />
+        <div className="absolute bottom-0 left-0 w-16 h-16 border-l-2 border-b-2 border-crimson-vivid/30 rounded-bl-2xl" />
+        <div className="absolute bottom-0 right-0 w-16 h-16 border-r-2 border-b-2 border-crimson-vivid/30 rounded-br-2xl" />
+        
+        {/* Wax seal watermark */}
+        <div className="absolute bottom-6 right-6 opacity-10">
+          <div className="w-14 h-14 rounded-full bg-crimson-vivid flex items-center justify-center">
+            <span className="font-display text-lg text-white">LQ</span>
+          </div>
+        </div>
+        
+        {/* Favorite button */}
+        <button
+          onClick={onFavorite}
+          className={cn(
+            "absolute top-4 right-4 p-2.5 rounded-full transition-all duration-300 z-10 group",
+            isFavorite 
+              ? "text-crimson-glow bg-crimson-vivid/20" 
+              : "text-muted-foreground hover:text-crimson-glow hover:bg-crimson-vivid/10"
+          )}
+        >
+          <Heart className={cn(
+            "w-6 h-6 transition-transform group-hover:scale-110",
+            isFavorite && "fill-current"
+          )} />
+        </button>
+        
+        {/* Spice indicator */}
+        <div className={cn(
+          "absolute top-4 left-4 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider border",
+          getSpiceColor()
+        )}>
+          {card.spice === 'spicy' && <Sparkles className="w-3 h-3 inline mr-1" />}
+          {card.spice}
+        </div>
+        
+        {/* Card content */}
+        <div className="mt-12 mb-4">
+          {renderCardContent()}
+        </div>
       </div>
-      
-      <div className="mt-8">
-        {renderCardContent()}
-      </div>
-    </Card>
+    </div>
   );
 };
 

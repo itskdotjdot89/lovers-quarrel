@@ -1,8 +1,7 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Play, Settings, Heart, Sparkles, LogIn, User, Check } from 'lucide-react';
+import { Play, Settings, Heart, Sparkles, LogIn, User, Check, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -25,17 +24,12 @@ const Home = () => {
       setUser(session?.user ?? null);
     });
 
-    // Check if redirected from successful checkout
     if (searchParams.get('success') === 'true') {
       toast({
         title: 'Welcome to Premium!',
         description: 'Your subscription is now active. Enjoy all premium features!'
       });
-      
-      // Refresh subscription status
       checkSubscription();
-      
-      // Clear the success param
       window.history.replaceState({}, '', '/home');
     }
 
@@ -43,15 +37,21 @@ const Home = () => {
   }, [searchParams, toast, checkSubscription]);
 
   return (
-    <div className="min-h-screen bg-background p-4 flex flex-col">
-      <div className="max-w-2xl mx-auto w-full flex-1 flex flex-col">
+    <div className="min-h-screen bg-gradient-game p-4 flex flex-col">
+      {/* Background effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-crimson-vivid/8 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-0 w-[400px] h-[400px] bg-purple/5 rounded-full blur-3xl" />
+      </div>
+      
+      <div className="relative max-w-2xl mx-auto w-full flex-1 flex flex-col">
         {/* Header */}
         <div className="text-center py-8 relative">
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigate(user ? '/settings' : '/auth')}
-            className="absolute right-0 top-8"
+            className="absolute right-0 top-8 border-border/50 hover:border-crimson-vivid/50 hover:bg-crimson-vivid/10 transition-all"
           >
             {user ? (
               <>
@@ -68,82 +68,105 @@ const Home = () => {
           <img 
             src={loversQuarrelLogo} 
             alt="Lovers' Quarrel" 
-            className="w-48 h-auto mx-auto mb-3 logo-glow"
+            className="w-44 h-auto mx-auto mb-4 logo-glow float"
           />
-          <p className="font-card text-lg text-muted-foreground">
+          <p className="font-card text-xl text-muted-foreground">
             Choose your mood. Draw your truth.
           </p>
         </div>
 
         {/* Main Menu */}
-        <div className="flex-1 flex flex-col justify-center space-y-4">
-          <Button
+        <div className="flex-1 flex flex-col justify-center space-y-5">
+          {/* Play Button - Hero CTA */}
+          <button
             onClick={() => navigate('/decks')}
-            className="h-20 bg-secondary hover:bg-secondary/90 text-foreground font-display text-2xl card-shadow group"
+            className="relative group h-24 rounded-2xl overflow-hidden transition-all duration-300 hover-lift"
           >
-            <Play className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform" />
-            Play Now
-          </Button>
+            {/* Animated gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-r from-crimson-vivid via-crimson-deep to-crimson-vivid bg-[length:200%_100%] group-hover:animate-[shimmer_2s_linear_infinite]" />
+            
+            {/* Glow effect */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute inset-0 bg-crimson-glow/20 blur-xl" />
+            </div>
+            
+            {/* Content */}
+            <div className="relative h-full flex items-center justify-center gap-4">
+              <Play className="w-8 h-8 text-white group-hover:scale-110 transition-transform" fill="currentColor" />
+              <span className="font-display text-3xl text-white">Play Now</span>
+              <ChevronRight className="w-6 h-6 text-white/70 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </button>
 
+          {/* Secondary actions */}
           <div className="grid grid-cols-2 gap-4">
-            <Card
+            <button
               onClick={() => navigate('/favorites')}
-              className="p-6 bg-card border-2 border-border hover:border-secondary cursor-pointer transition-all card-shadow hover:scale-105"
+              className="group p-6 glass rounded-xl border border-border/50 hover:border-crimson-vivid/50 transition-all duration-300 hover-lift text-left"
             >
-              <Heart className="w-8 h-8 text-secondary mb-3" />
-              <h3 className="font-display text-lg text-foreground">Favorites</h3>
-              <p className="text-sm text-muted-foreground font-ui mt-1">
-                Saved cards
+              <div className="w-12 h-12 rounded-xl bg-crimson-vivid/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Heart className="w-6 h-6 text-crimson-glow" />
+              </div>
+              <h3 className="font-display text-xl text-foreground mb-1">Favorites</h3>
+              <p className="text-sm text-muted-foreground">
+                Your saved cards
               </p>
-            </Card>
+            </button>
 
-            <Card
+            <button
               onClick={() => navigate('/settings')}
-              className="p-6 bg-card border-2 border-border hover:border-secondary cursor-pointer transition-all card-shadow hover:scale-105"
+              className="group p-6 glass rounded-xl border border-border/50 hover:border-muted-foreground/50 transition-all duration-300 hover-lift text-left"
             >
-              <Settings className="w-8 h-8 text-muted-foreground mb-3" />
-              <h3 className="font-display text-lg text-foreground">Settings</h3>
-              <p className="text-sm text-muted-foreground font-ui mt-1">
+              <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Settings className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <h3 className="font-display text-xl text-foreground mb-1">Settings</h3>
+              <p className="text-sm text-muted-foreground">
                 Preferences
               </p>
-            </Card>
+            </button>
           </div>
 
-          {/* Coming Soon - AI Add-on teaser */}
-          <Card className="p-6 bg-gradient-to-br from-crimson-deep/20 to-crimson-vivid/20 border-2 border-crimson-vivid/30">
-            <div className="flex items-start space-x-4">
-              <Sparkles className="w-6 h-6 text-crimson-glow mt-1" />
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-display text-xl text-foreground">
-                    AI Add-On
-                  </h3>
-                  {subscribed && (
-                    <div className="flex items-center gap-1 text-green-500 text-sm">
-                      <Check className="w-4 h-4" />
-                      <span>Active</span>
-                    </div>
+          {/* AI Add-on Card */}
+          <div className="relative glass rounded-xl border border-crimson-vivid/30 overflow-hidden">
+            {/* Shimmer effect */}
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-crimson-glow/50 to-transparent shimmer" />
+            
+            <div className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-crimson-vivid/30 to-purple/20 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-6 h-6 text-crimson-glow" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <h3 className="font-display text-xl text-foreground">
+                      AI Insights
+                    </h3>
+                    {subscribed && (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
+                        <Check className="w-3.5 h-3.5" />
+                        Active
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Deep psychological insights powered by AI. Understand your choices and deepen your connection.
+                  </p>
+                  {!subscribed && (
+                    <Button
+                      onClick={() => navigate('/pricing')}
+                      variant="outline"
+                      size="sm"
+                      className="border-crimson-vivid/50 text-crimson-glow hover:bg-crimson-vivid/10 hover:text-crimson-soft"
+                    >
+                      View Plans
+                      <ChevronRight className="w-4 h-4 ml-1" />
+                    </Button>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground font-card leading-relaxed">
-                  Heat Ups, Deep Cuts, and Deep Insights powered by AI.
-                  <span className="text-crimson-glow font-semibold ml-1">
-                    {subscribed ? 'Available now!' : 'Subscribe to unlock'}
-                  </span>
-                </p>
-                {!subscribed && (
-                  <Button
-                    onClick={() => navigate('/pricing')}
-                    variant="outline"
-                    size="sm"
-                    className="mt-3"
-                  >
-                    View Plans
-                  </Button>
-                )}
               </div>
             </div>
-          </Card>
+          </div>
         </div>
 
         {/* Footer */}

@@ -2,56 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Modern Game Design System - Bold, Immersive, Dynamic */
 
 @layer base {
   :root {
-    /* Lovers' Quarrel - Gothic Romance Theme */
-    --background: 0 0% 4%;  /* #0A0A0A near-black */
-    --foreground: 0 0% 100%;  /* Pure white text */
+    /* Core palette - Dark luxe with crimson accents */
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 8%;  /* Slightly lighter black for cards */
-    --card-foreground: 0 0% 100%;
+    --card: 240 10% 8%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 6%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 355 100% 21%;  /* #6A0006 deep crimson */
+    --primary: 355 90% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 355 100% 35%;  /* #B3000C vivid red border */
+    --secondary: 355 85% 55%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 240 5% 18%;
+    --muted-foreground: 240 5% 60%;
 
-    --accent: 355 100% 21%;
+    --accent: 355 90% 45%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 355 100% 35%;  /* Vivid red borders */
-    --input: 0 0% 15%;
-    --ring: 355 100% 35%;
+    --border: 240 5% 20%;
+    --input: 240 5% 15%;
+    --ring: 355 85% 55%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    /* Custom design tokens */
-    --crimson-deep: 355 100% 21%;
-    --crimson-vivid: 355 100% 35%;
-    --crimson-glow: 355 100% 45%;
+    /* Extended palette */
+    --crimson-deep: 355 90% 25%;
+    --crimson-vivid: 355 85% 55%;
+    --crimson-glow: 355 100% 65%;
+    --crimson-soft: 355 70% 75%;
     
-    /* Typography tokens */
+    /* Accent colors for variety */
+    --gold: 45 90% 55%;
+    --purple: 280 70% 50%;
+    --teal: 175 70% 45%;
+    
+    /* Typography */
     --font-display: 'Uncial Antiqua', serif;
     --font-card: 'EB Garamond', serif;
     --font-ui: 'Inter', sans-serif;
     
-    /* Shadows & effects */
-    --glow-crimson: 0 0 20px hsl(var(--crimson-vivid) / 0.4);
-    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.6);
+    /* Modern effects */
+    --glow-crimson: 0 0 30px hsl(355 85% 55% / 0.5), 0 0 60px hsl(355 85% 55% / 0.2);
+    --glow-soft: 0 0 40px hsl(355 85% 55% / 0.15);
+    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.4), 0 2px 8px hsl(0 0% 0% / 0.3);
+    --shadow-elevated: 0 20px 60px hsl(0 0% 0% / 0.5), 0 8px 24px hsl(0 0% 0% / 0.4);
+    --glass-bg: hsl(240 10% 8% / 0.8);
+    --glass-border: hsl(0 0% 100% / 0.1);
   }
 }
 
@@ -61,7 +69,7 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground font-[Inter];
+    @apply bg-background text-foreground font-[Inter] antialiased;
     -webkit-tap-highlight-color: transparent;
   }
   
@@ -84,11 +92,146 @@ All colors MUST be HSL.
     text-shadow: var(--glow-crimson);
   }
   
+  .text-glow-soft {
+    text-shadow: 0 0 20px hsl(355 85% 55% / 0.4);
+  }
+  
   .logo-glow {
-    filter: drop-shadow(0 0 12px hsl(355 100% 35% / 0.5)) drop-shadow(0 0 24px hsl(355 100% 35% / 0.3));
+    filter: drop-shadow(0 0 20px hsl(355 85% 55% / 0.6)) drop-shadow(0 0 40px hsl(355 85% 55% / 0.3));
   }
   
   .card-shadow {
     box-shadow: var(--shadow-card);
+  }
+  
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+  
+  /* Glassmorphism */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+  }
+  
+  .glass-subtle {
+    background: hsl(240 10% 10% / 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  
+  /* Gradient backgrounds */
+  .bg-gradient-game {
+    background: 
+      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(355 85% 55% / 0.15), transparent),
+      radial-gradient(ellipse 60% 40% at 80% 100%, hsl(280 70% 50% / 0.1), transparent),
+      linear-gradient(180deg, hsl(240 10% 4%) 0%, hsl(240 10% 6%) 100%);
+  }
+  
+  .bg-gradient-card {
+    background: linear-gradient(145deg, hsl(240 10% 10%) 0%, hsl(240 10% 6%) 100%);
+  }
+  
+  /* Animated borders */
+  .border-glow {
+    position: relative;
+  }
+  
+  .border-glow::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, hsl(355 85% 55% / 0.5), transparent, hsl(355 85% 55% / 0.3));
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .border-glow:hover::before {
+    opacity: 1;
+  }
+  
+  /* Pulse animation for CTAs */
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px hsl(355 85% 55% / 0.4);
+    }
+    50% {
+      box-shadow: 0 0 40px hsl(355 85% 55% / 0.6), 0 0 60px hsl(355 85% 55% / 0.3);
+    }
+  }
+  
+  /* Floating animation */
+  .float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  
+  /* Shimmer effect */
+  .shimmer {
+    background: linear-gradient(
+      110deg,
+      transparent 25%,
+      hsl(0 0% 100% / 0.1) 50%,
+      transparent 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+  
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+  
+  /* Card flip animation */
+  .perspective {
+    perspective: 1000px;
+  }
+  
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+  
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+  
+  /* Smooth hover lift */
+  .hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-elevated);
+  }
+  
+  /* Button hover glow */
+  .btn-glow {
+    transition: all 0.3s ease;
+  }
+  
+  .btn-glow:hover {
+    box-shadow: 0 0 30px hsl(355 85% 55% / 0.5);
   }
 }
