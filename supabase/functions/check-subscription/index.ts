@@ -13,6 +13,27 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
+// Retry helper for transient network errors
+const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 3, delay = 500): Promise<T> => {
+  let lastError: Error | null = null;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      const isRetryable = lastError.message.includes('connection') || 
+                          lastError.message.includes('reset') ||
+                          lastError.message.includes('timeout');
+      if (!isRetryable || attempt === maxRetries) {
+        throw lastError;
+      }
+      logStep(`Retry attempt ${attempt}/${maxRetries}`, { error: lastError.message });
+      await new Promise(resolve => setTimeout(resolve, delay * attempt));
+    }
+  }
+  throw lastError;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -33,7 +54,9 @@ serve(async (req) => {
     if (!authHeader) throw new Error("No authorization header provided");
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    const { data: userData, error: userError } = await withRetry(() => 
+      supabaseClient.auth.getUser(token)
+    );
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     
     const user = userData.user;
