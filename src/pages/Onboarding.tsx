@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import WelcomeCarousel from '@/components/Onboarding/WelcomeCarousel';
 import AgeGate from '@/components/AgeGate';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check } from 'lucide-react';
+import { Check, Sparkles, ArrowRight } from 'lucide-react';
 import loversQuarrelLogo from '@/assets/lovers-quarrel-logo.png';
 
 type OnboardingStep = 'welcome' | 'age-gate' | 'trial-prompt';
@@ -34,68 +33,93 @@ const Onboarding = () => {
     return <AgeGate onAccept={handleAgeGateAccept} />;
   }
 
+  const features = [
+    'All 3 decks with 600+ cards',
+    'Unlimited AI response analysis',
+    'Solo, date night & long-distance modes',
+    'Save favorites across devices',
+    'New cards added quarterly'
+  ];
+
   // Trial Prompt
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-4 text-center">
-          <img 
-            src={loversQuarrelLogo} 
-            alt="Lovers' Quarrel" 
-            className="w-32 h-auto mx-auto logo-glow"
-          />
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Start Your 7-Day Free Trial
-          </CardTitle>
-          <CardDescription className="text-base">
-            Experience everything Lovers' Quarrel has to offer with no charge today.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-3">
-            {[
-              'All 3 decks with 600+ cards',
-              'Unlimited AI response analysis',
-              'Solo, date night & long-distance modes',
-              'Save favorites across devices',
-              'New cards added quarterly'
-            ].map((feature, index) => (
-              <div key={index} className="flex items-start gap-3">
-                <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <span className="text-sm text-foreground">{feature}</span>
+    <div className="min-h-screen bg-gradient-game flex items-center justify-center p-4">
+      {/* Background effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-crimson-vivid/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-purple/10 rounded-full blur-3xl" />
+      </div>
+      
+      <div className="relative w-full max-w-md glass rounded-2xl overflow-hidden shadow-elevated animate-slide-up">
+        {/* Shimmer effect on top */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-crimson-glow to-transparent shimmer" />
+        
+        <div className="p-8">
+          {/* Header */}
+          <div className="text-center space-y-4 mb-8">
+            <img 
+              src={loversQuarrelLogo} 
+              alt="Lovers' Quarrel" 
+              className="w-28 h-auto mx-auto logo-glow"
+            />
+            <div>
+              <h1 className="text-3xl font-display text-foreground text-glow-soft mb-2">
+                Start Your Journey
+              </h1>
+              <p className="text-lg text-crimson-soft font-semibold">
+                7-Day Free Trial
+              </p>
+            </div>
+          </div>
+          
+          {/* Features list */}
+          <div className="space-y-3 mb-8">
+            {features.map((feature, index) => (
+              <div 
+                key={index} 
+                className="flex items-center gap-3 animate-fade-in"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <div className="w-6 h-6 rounded-full bg-crimson-vivid/20 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-4 h-4 text-crimson-glow" />
+                </div>
+                <span className="text-foreground">{feature}</span>
               </div>
             ))}
           </div>
 
-          <div className="bg-muted/50 rounded-lg p-4 text-center">
-            <p className="text-sm text-muted-foreground">
+          {/* Pricing note */}
+          <div className="bg-muted/30 rounded-xl p-4 text-center mb-8 border border-border/50">
+            <p className="text-muted-foreground">
               <span className="font-semibold text-foreground">No charge today.</span>
-              {' '}Cancel anytime during your trial. After 7 days, just $5-8/month.
+              {' '}Cancel anytime. After 7 days, just $5-8/month.
             </p>
           </div>
 
+          {/* Actions */}
           <div className="space-y-3">
             <Button
               onClick={handleStartTrial}
-              className="w-full h-12 text-lg"
+              className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid transition-all duration-300 btn-glow pulse-glow group"
             >
-              Create Account & Start Trial
+              Create Account
+              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
 
             <Button
               onClick={() => navigate('/auth')}
               variant="outline"
-              className="w-full h-12 text-lg"
+              className="w-full h-12 text-base border-border/50 hover:border-crimson-vivid/50 hover:bg-crimson-vivid/10 transition-all"
             >
               Already have an account? Sign In
             </Button>
           </div>
 
-          <p className="text-xs text-center text-muted-foreground">
+          <p className="text-xs text-center text-muted-foreground mt-6">
             By continuing, you agree to our Terms of Service and Privacy Policy
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };

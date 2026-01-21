@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Shield, AlertTriangle, Heart } from 'lucide-react';
 import loversQuarrelLogo from '@/assets/lovers-quarrel-logo.png';
 
 interface AgeGateProps {
@@ -16,55 +16,82 @@ const AgeGate = ({ onAccept }: AgeGateProps) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="max-w-md w-full p-8 bg-card border-2 border-secondary card-shadow">
-        <div className="flex flex-col items-center space-y-6 text-center">
+    <div className="min-h-screen bg-gradient-game flex items-center justify-center p-4">
+      {/* Background glow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-crimson-deep/20 rounded-full blur-3xl" />
+      </div>
+      
+      <div className="relative w-full max-w-md glass rounded-2xl p-8 shadow-elevated animate-scale-in">
+        {/* Header */}
+        <div className="flex flex-col items-center space-y-4 text-center mb-8">
           <img 
             src={loversQuarrelLogo} 
             alt="Lovers Quarrel" 
-            className="w-32 h-auto logo-glow"
+            className="w-28 h-auto logo-glow"
           />
           
-          <h1 className="font-display text-3xl text-foreground">
-            Lovers' Quarrel
+          <h1 className="font-display text-3xl text-foreground text-glow-soft">
+            Before We Begin
           </h1>
-          
-          <div className="space-y-4 font-card text-foreground/90">
-            <p className="text-lg leading-relaxed">
-              This game contains adult themes and explicit content designed for mature audiences.
-            </p>
-            
-            <div className="bg-muted/30 p-4 rounded-lg space-y-2 text-sm">
-              <p className="font-semibold text-foreground">Age Verification</p>
-              <p>You must be 18 years or older to continue.</p>
+        </div>
+        
+        {/* Info cards */}
+        <div className="space-y-4 mb-8">
+          <div className="flex items-start gap-4 p-4 rounded-xl bg-crimson-deep/20 border border-crimson-vivid/30">
+            <div className="p-2 rounded-lg bg-crimson-vivid/20">
+              <AlertTriangle className="w-5 h-5 text-crimson-glow" />
             </div>
-            
-            <div className="bg-muted/30 p-4 rounded-lg space-y-2 text-sm">
-              <p className="font-semibold text-foreground">Consent & Safety</p>
-              <p>
-                Play requires mutual consent. All players should feel comfortable 
-                and respected. You can pass on any card at any time.
+            <div>
+              <p className="font-semibold text-foreground mb-1">18+ Content</p>
+              <p className="text-sm text-muted-foreground">
+                This game contains adult themes and explicit content for mature audiences.
               </p>
             </div>
           </div>
           
-          <div className="w-full space-y-3 pt-4">
-            <Button
-              onClick={handleAccept}
-              className="w-full bg-secondary hover:bg-secondary/90 text-foreground font-semibold text-lg h-14"
-            >
-              I am 18+ and I understand
-            </Button>
-            
-            <a
-              href="about:blank"
-              className="block w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Exit
-            </a>
+          <div className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border/50">
+            <div className="p-2 rounded-lg bg-muted">
+              <Shield className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground mb-1">Age Verification</p>
+              <p className="text-sm text-muted-foreground">
+                You must be 18 years or older to continue.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-4 p-4 rounded-xl bg-muted/30 border border-border/50">
+            <div className="p-2 rounded-lg bg-muted">
+              <Heart className="w-5 h-5 text-crimson-soft" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground mb-1">Consent & Safety</p>
+              <p className="text-sm text-muted-foreground">
+                Play requires mutual consent. You can pass on any card at any time.
+              </p>
+            </div>
           </div>
         </div>
-      </Card>
+        
+        {/* Actions */}
+        <div className="space-y-3">
+          <Button
+            onClick={handleAccept}
+            className="w-full h-14 bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid text-foreground font-semibold text-lg btn-glow transition-all duration-300"
+          >
+            I am 18+ and I understand
+          </Button>
+          
+          <a
+            href="about:blank"
+            className="block w-full text-center py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Exit
+          </a>
+        </div>
+      </div>
     </div>
   );
 };

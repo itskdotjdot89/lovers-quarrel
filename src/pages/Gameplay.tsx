@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Users, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, Loader2, ChevronRight, Sparkles } from 'lucide-react';
 import GameCard from '@/components/GameCard';
 import AIAnalysisDialog from '@/components/AIAnalysisDialog';
 import MultiplayerResponseInput from '@/components/MultiplayerResponseInput';
@@ -11,7 +11,6 @@ import { Card as CardType } from '@/types/game';
 import { loadFavorites, saveFavorites, toggleFavorite, shuffleCards } from '@/lib/gameLogic';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Card } from '@/components/ui/card';
 import { usePresence } from '@/hooks/usePresence';
 
 const Gameplay = () => {
@@ -97,7 +96,6 @@ const Gameplay = () => {
     }
     const config = JSON.parse(configStr);
     
-    // Fetch cards from database
     const { data: dbCards, error } = await supabase
       .from('cards')
       .select('*')
@@ -110,14 +108,12 @@ const Gameplay = () => {
       return;
     }
     
-    // Filter by spice level
     const filteredCards = dbCards.filter(card => {
       if (config.intensity === 'soft') return card.spice === 'soft';
       if (config.intensity === 'standard') return card.spice === 'soft' || card.spice === 'standard';
-      return true; // spicy includes all
+      return true;
     });
     
-    // Map database cards to CardType format
     const mappedCards: CardType[] = filteredCards.map(card => ({
       id: card.id,
       deckId: card.deck_id as CardType['deckId'],
@@ -130,7 +126,6 @@ const Gameplay = () => {
       createdAt: new Date(card.created_at).getTime()
     }));
     
-    // Shuffle the cards
     const shuffled = shuffleCards(mappedCards);
     
     setCards(shuffled);
@@ -152,7 +147,6 @@ const Gameplay = () => {
     setIsHost(session.host_id === user.id);
     setCurrentIndex(session.current_card_index);
 
-    // Get session cards with their order
     const { data: sessionCards } = await supabase
       .from('session_cards')
       .select('card_id, card_order')
@@ -162,20 +156,16 @@ const Gameplay = () => {
     if (sessionCards && sessionCards.length > 0) {
       setTotalCards(sessionCards.length);
       
-      // Get all card IDs
       const cardIds = sessionCards.map(sc => sc.card_id);
       
-      // Fetch actual card data from database
       const { data: dbCards } = await supabase
         .from('cards')
         .select('*')
         .in('id', cardIds);
       
       if (dbCards) {
-        // Create a map for quick lookup
         const cardMap = new Map(dbCards.map(c => [c.id, c]));
         
-        // Map and order cards according to session_cards order
         const orderedCards: CardType[] = sessionCards
           .map(sc => cardMap.get(sc.card_id))
           .filter(Boolean)
@@ -247,14 +237,12 @@ const Gameplay = () => {
 
   const handleNext = async () => {
     if (sessionId) {
-      // Multiplayer mode
       if (!isHost) {
         toast.error('Only host can advance');
         return;
       }
       await supabase.from('game_sessions').update({ current_card_index: currentIndex + 1 }).eq('id', sessionId);
     } else {
-      // Solo mode
       const nextIndex = currentIndex + 1;
       
       if (nextIndex < cards.length) {
@@ -276,34 +264,75 @@ const Gameplay = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-foreground">Loading cards...</p>
+      <div className="min-h-screen bg-gradient-game flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-crimson-glow" />
+          <p className="text-muted-foreground font-card text-lg">Loading your cards...</p>
+        </div>
       </div>
     );
   }
 
   if (!currentCard) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-foreground">No cards available</p>
+      <div className="min-h-screen bg-gradient-game flex items-center justify-center">
+        <div className="glass rounded-2xl p-8 text-center">
+          <p className="text-foreground font-card text-xl mb-4">No cards available</p>
+          <Button onClick={() => navigate('/decks')} variant="outline">
+            Choose Decks
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-game p-4">
+      {/* Background effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-crimson-vivid/8 rounded-full blur-3xl" />
+      </div>
+      
+      <div className="relative max-w-4xl mx-auto">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => navigate('/')}><ArrowLeft className="w-5 h-5" /></Button>
-          {sessionId && <Card className="px-4 py-2 flex items-center gap-2"><Users className="w-4 h-4" /><span className="text-sm">{participants.length} Players</span></Card>}
-          <div className="text-sm">{currentIndex + 1} / {totalCards}</div>
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/')}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Exit
+          </Button>
+          
+          {sessionId && (
+            <div className="glass px-4 py-2 rounded-full flex items-center gap-2 border border-border/50">
+              <Users className="w-4 h-4 text-crimson-glow" />
+              <span className="text-sm font-medium">{participants.length} Players</span>
+            </div>
+          )}
+          
+          {/* Card counter */}
+          <div className="glass px-4 py-2 rounded-full border border-border/50">
+            <span className="text-sm font-mono text-muted-foreground">
+              <span className="text-foreground font-semibold">{currentIndex + 1}</span>
+              <span className="mx-1">/</span>
+              <span>{totalCards}</span>
+            </span>
+          </div>
         </div>
+        
+        {/* Main content */}
         <div className="flex flex-col items-center">
+          {/* Loading overlay */}
           {isAnalyzing && (
             <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <p className="text-foreground font-ui">Analyzing your response...</p>
+              <div className="glass rounded-2xl p-8 flex flex-col items-center gap-4">
+                <div className="relative">
+                  <Loader2 className="w-12 h-12 animate-spin text-crimson-glow" />
+                  <Sparkles className="absolute -top-1 -right-1 w-5 h-5 text-gold animate-pulse" />
+                </div>
+                <p className="text-foreground font-card text-lg">Analyzing your response...</p>
               </div>
             </div>
           )}
@@ -314,7 +343,6 @@ const Gameplay = () => {
             onFavorite={handleFavorite}
             onChoice={async (choice) => {
               if (sessionId) {
-                // Multiplayer mode
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) return;
                 await supabase.from('session_responses').insert({
@@ -326,7 +354,6 @@ const Gameplay = () => {
                 });
               }
               
-              // Build response text based on card type
               let responseText = '';
               
               if (currentCard.subtype === 'this_or_that') {
@@ -338,7 +365,6 @@ const Gameplay = () => {
               }
               
               toast.success(responseText);
-              // Set pending choice to show AI analysis option
               setPendingChoice({ choice, responseText, cardSubtype: currentCard.subtype });
             }}
             responseInputComponent={
@@ -365,6 +391,7 @@ const Gameplay = () => {
             }
           />
           
+          {/* Partner responses (multiplayer) */}
           {sessionId && (
             <div className="mt-6 w-full max-w-2xl">
               <PartnerResponses
@@ -376,12 +403,20 @@ const Gameplay = () => {
               />
             </div>
           )}
+          
+          {/* AI Analysis prompt */}
           {pendingChoice && (
-            <div className="mt-4 w-full max-w-2xl">
-              <Card className="p-4 bg-muted/30 border-secondary/30">
-                <p className="text-sm text-muted-foreground mb-3 text-center">
-                  Want AI insights on your choice?
-                </p>
+            <div className="mt-6 w-full max-w-2xl animate-slide-up">
+              <div className="glass rounded-xl p-6 border border-crimson-vivid/30">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-crimson-vivid/30 to-purple/20 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-crimson-glow" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Want deeper insights?</p>
+                    <p className="text-sm text-muted-foreground">AI can analyze your choice</p>
+                  </div>
+                </div>
                 
                 {/* Show input box for "Say it" choice */}
                 {pendingChoice.cardSubtype === 'say_sip_strip' && pendingChoice.choice === 'Say it' && (
@@ -390,22 +425,21 @@ const Gameplay = () => {
                       value={sayItResponse}
                       onChange={(e) => setSayItResponse(e.target.value)}
                       placeholder="What did you say? Share your response for AI insights..."
-                      className="w-full p-3 rounded-lg border border-secondary/30 bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary/50 resize-none"
+                      className="w-full p-4 rounded-xl border border-border/50 bg-muted/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-crimson-vivid/50 focus:border-crimson-vivid/50 resize-none font-card text-lg transition-all"
                       rows={3}
                     />
                   </div>
                 )}
                 
-                <div className="flex gap-3 justify-center">
+                <div className="flex gap-3">
                   <Button
                     variant="outline"
-                    size="sm"
                     onClick={skipAnalysis}
+                    className="flex-1 border-border/50 hover:border-muted-foreground/50"
                   >
                     Skip
                   </Button>
                   <Button
-                    size="sm"
                     onClick={() => {
                       const responseText = pendingChoice.cardSubtype === 'say_sip_strip' && pendingChoice.choice === 'Say it' && sayItResponse.trim()
                         ? `I chose to say: "${sayItResponse.trim()}"`
@@ -414,19 +448,31 @@ const Gameplay = () => {
                       setSayItResponse('');
                     }}
                     disabled={pendingChoice.cardSubtype === 'say_sip_strip' && pendingChoice.choice === 'Say it' && !sayItResponse.trim()}
-                    className="bg-secondary hover:bg-secondary/90"
+                    className="flex-1 bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid btn-glow"
                   >
+                    <Sparkles className="w-4 h-4 mr-2" />
                     Get AI Insights
                   </Button>
                 </div>
-              </Card>
+              </div>
             </div>
           )}
-          <div className="flex gap-3 mt-6">
-            <Button onClick={() => handleNext()} disabled={sessionId && !isHost}>Next Card</Button>
+          
+          {/* Next button */}
+          <div className="mt-8">
+            <Button 
+              onClick={() => handleNext()} 
+              disabled={sessionId && !isHost}
+              size="lg"
+              className="h-14 px-8 text-lg bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid btn-glow group"
+            >
+              Next Card
+              <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+            </Button>
           </div>
         </div>
       </div>
+      
       <AIAnalysisDialog 
         open={showAnalysisDialog} 
         onOpenChange={setShowAnalysisDialog} 
