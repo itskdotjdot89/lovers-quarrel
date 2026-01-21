@@ -3,11 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CreditCard, Check, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, Check, Trash2, Loader2, Brain } from 'lucide-react';
 import { SpiceLevel } from '@/types/game';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  loadAnalysisConfig, 
+  saveAnalysisConfig, 
+  DEPTH_CONFIG, 
+  AnalysisDepth 
+} from '@/lib/aiAnalysisConfig';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +30,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [intensity, setIntensity] = useState<SpiceLevel>('standard');
+  const [analysisDepth, setAnalysisDepth] = useState<AnalysisDepth>('standard');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { subscribed, loading: subLoading } = useSubscription();
@@ -33,6 +40,10 @@ const Settings = () => {
     if (stored) {
       setIntensity(stored as SpiceLevel);
     }
+    
+    // Load analysis config
+    const analysisConfig = loadAnalysisConfig();
+    setAnalysisDepth(analysisConfig.depth);
 
     // Check auth status
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -43,6 +54,11 @@ const Settings = () => {
   const handleIntensityChange = (level: SpiceLevel) => {
     setIntensity(level);
     localStorage.setItem('lq_default_intensity', level);
+  };
+
+  const handleDepthChange = (depth: AnalysisDepth) => {
+    setAnalysisDepth(depth);
+    saveAnalysisConfig({ depth });
   };
 
   const handleReset = () => {
@@ -178,7 +194,37 @@ const Settings = () => {
             </div>
           </Card>
 
-          {/* About */}
+          {/* AI Analysis Depth */}
+          <Card className="p-6 bg-card border-2 border-border">
+            <div className="flex items-center gap-2 mb-4">
+              <Brain className="w-5 h-5 text-secondary" />
+              <label className="block font-display text-lg text-foreground">
+                AI Analysis Depth
+              </label>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Choose how detailed you want the psychological insights to be
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              {(['brief', 'standard', 'deep'] as AnalysisDepth[]).map((depth) => (
+                <Button
+                  key={depth}
+                  onClick={() => handleDepthChange(depth)}
+                  variant={analysisDepth === depth ? 'default' : 'outline'}
+                  className={
+                    analysisDepth === depth
+                      ? 'bg-secondary hover:bg-secondary/90 text-foreground flex-col h-auto py-3'
+                      : 'border-border text-muted-foreground hover:border-secondary flex-col h-auto py-3'
+                  }
+                >
+                  <span className="font-card">{DEPTH_CONFIG[depth].label}</span>
+                  <span className="text-xs opacity-70 mt-1">{DEPTH_CONFIG[depth].description}</span>
+                </Button>
+              ))}
+            </div>
+          </Card>
+
+
           <Card className="p-6 bg-card border-2 border-border">
             <h2 className="font-display text-lg mb-3 text-foreground">
               About Lovers' Quarrel

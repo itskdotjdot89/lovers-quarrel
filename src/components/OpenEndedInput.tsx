@@ -4,14 +4,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Mic, Square, Send, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { DeckMood } from '@/types/game';
+import { loadAnalysisConfig, AnalysisDepth } from '@/lib/aiAnalysisConfig';
 
 interface OpenEndedInputProps {
   cardId: string;
   questionText: string;
+  deckId?: DeckMood;
   onAnalysisComplete: (analysis: string, sentiment: string, themes: string[]) => void;
 }
 
-const OpenEndedInput = ({ cardId, questionText, onAnalysisComplete }: OpenEndedInputProps) => {
+const OpenEndedInput = ({ cardId, questionText, deckId, onAnalysisComplete }: OpenEndedInputProps) => {
   const [responseText, setResponseText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -116,6 +119,8 @@ const OpenEndedInput = ({ cardId, questionText, onAnalysisComplete }: OpenEndedI
         return;
       }
 
+      const config = loadAnalysisConfig();
+      
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-response`,
         {
@@ -128,6 +133,8 @@ const OpenEndedInput = ({ cardId, questionText, onAnalysisComplete }: OpenEndedI
             responseText,
             cardId,
             questionText,
+            deckId,
+            depth: config.depth,
           }),
         }
       );
