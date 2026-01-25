@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CreditCard, Check, Trash2, Loader2, Brain } from 'lucide-react';
+import { ArrowLeft, CreditCard, Check, Trash2, Loader2, Brain, Settings2 } from 'lucide-react';
 import { SpiceLevel } from '@/types/game';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useRevenueCat } from '@/hooks/useRevenueCat';
 import { 
   loadAnalysisConfig, 
   saveAnalysisConfig, 
@@ -33,7 +34,9 @@ const Settings = () => {
   const [analysisDepth, setAnalysisDepth] = useState<AnalysisDepth>('standard');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isOpeningCustomerCenter, setIsOpeningCustomerCenter] = useState(false);
   const { subscribed, loading: subLoading } = useSubscription();
+  const { isNative, isReady: revenueCatReady, presentCustomerCenter } = useRevenueCat();
 
   useEffect(() => {
     const stored = localStorage.getItem('lq_default_intensity');
@@ -150,19 +153,50 @@ const Settings = () => {
                   ? 'You have full access to all premium features'
                   : 'Subscribe to unlock AI insights and all game modes'}
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2">
                 {subscribed ? (
-                  <Button
-                    onClick={() => navigate('/subscription')}
-                    variant="outline"
-                    className="flex-1"
-                  >
-                    Manage Subscription
-                  </Button>
+                  <>
+                    {/* Show Customer Center for native users, Stripe portal for web */}
+                    {isNative && revenueCatReady ? (
+                      <Button
+                        onClick={async () => {
+                          setIsOpeningCustomerCenter(true);
+                          try {
+                            await presentCustomerCenter();
+                          } finally {
+                            setIsOpeningCustomerCenter(false);
+                          }
+                        }}
+                        variant="outline"
+                        className="w-full"
+                        disabled={isOpeningCustomerCenter}
+                      >
+                        {isOpeningCustomerCenter ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Opening...
+                          </>
+                        ) : (
+                          <>
+                            <Settings2 className="w-4 h-4 mr-2" />
+                            Manage Subscription
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => navigate('/subscription')}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        Manage Subscription
+                      </Button>
+                    )}
+                  </>
                 ) : (
                   <Button
                     onClick={() => navigate('/pricing')}
-                    className="flex-1"
+                    className="w-full"
                   >
                     View Plans
                   </Button>

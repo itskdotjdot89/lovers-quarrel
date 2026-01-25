@@ -4,10 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, User, RotateCcw } from 'lucide-react';
+import { Check, User, RotateCcw, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { User as SupabaseUser } from '@supabase/supabase-js';
-import { useNatively } from '@/hooks/useNatively';
+import { useRevenueCat, PAYWALL_RESULT } from '@/hooks/useRevenueCat';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 
 type BundleType = 'individual' | 'couple';
@@ -19,8 +19,6 @@ interface PricingPlan {
   monthlyPrice: number;
   stripeMonthlyPriceId: string;
   stripeProductId: string;
-  // RevenueCat package ID (set this in RevenueCat dashboard)
-  revenueCatPackageId: string;
   description: string;
   features: string[];
   maxUsers: number;
@@ -35,7 +33,6 @@ const pricingPlans: PricingPlan[] = [
     monthlyPrice: 5,
     stripeMonthlyPriceId: 'price_1STYUuLisf4T9XH8vUJvgxrt',
     stripeProductId: 'prod_TQPJuQMoKp9kuV',
-    revenueCatPackageId: '$rc_monthly', // Default RevenueCat monthly package ID
     description: 'Unlock everything',
     maxUsers: 1,
     features: [
@@ -57,7 +54,16 @@ const Pricing = () => {
   const [loading, setLoading] = useState(false);
   const fromOnboarding = searchParams.get('from') === 'onboarding';
   
-  const { isNativeApp, isLoading: nativeLoading, loginToRevenueCat, purchasePackage, restorePurchases } = useNatively();
+  const { 
+    isNative, 
+    isReady: revenueCatReady, 
+    isLoading: revenueCatLoading,
+    login: revenueCatLogin,
+    presentPaywall,
+    restorePurchases: revenueCatRestore,
+    error: revenueCatError
+  } = useRevenueCat();
+  
   const { checkSubscription } = useSubscription();
 
   useEffect(() => {
@@ -65,14 +71,14 @@ const Pricing = () => {
       setUser(user);
       if (!user) {
         navigate('/auth');
-      } else if (isNativeApp) {
+      } else if (isNative && revenueCatReady) {
         // Login to RevenueCat when in native app
-        loginToRevenueCat(user.id, user.email || '');
+        revenueCatLogin(user.id);
       }
     });
-  }, [navigate, isNativeApp, loginToRevenueCat]);
+  }, [navigate, isNative, revenueCatReady, revenueCatLogin]);
 
-  const handleNativePurchase = async (plan: PricingPlan) => {
+  const handleNativePurchase = async () => {
     if (!user) {
       navigate('/auth');
       return;
@@ -81,9 +87,10 @@ const Pricing = () => {
     setLoading(true);
 
     try {
-      const result = await purchasePackage(plan.revenueCatPackageId);
+      // Present the RevenueCat Paywall
+      const result = await presentPaywall();
       
-      if (result.status === 'SUCCESS') {
+      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
         toast({
           title: 'Purchase Successful!',
           description: 'Welcome to Premium! Enjoy all features.'
@@ -91,20 +98,21 @@ const Pricing = () => {
         // Refresh subscription status
         await checkSubscription();
         navigate('/home');
-      } else if (result.status === 'CANCELLED') {
+      } else if (result === PAYWALL_RESULT.CANCELLED) {
         toast({
           title: 'Purchase Cancelled',
           description: 'No worries, you can subscribe anytime.'
         });
-      } else {
-        throw new Error(result.error || 'Purchase failed');
+      } else if (result === PAYWALL_RESULT.ERROR) {
+        throw new Error(revenueCatError || 'Purchase failed');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Native purchase error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to complete purchase';
       toast({
         variant: 'destructive',
         title: 'Purchase Error',
-        description: error.message || 'Failed to complete purchase'
+        description: errorMessage
       });
     } finally {
       setLoading(false);
@@ -114,24 +122,37 @@ const Pricing = () => {
   const handleRestore = async () => {
     setLoading(true);
     try {
-      const result = await restorePurchases();
-      if (result.status === 'SUCCESS') {
-        toast({
-          title: 'Purchases Restored',
-          description: 'Your subscription has been restored.'
-        });
-        await checkSubscription();
+      const customerInfo = await revenueCatRestore();
+      
+      if (customerInfo) {
+        // Check if they have the entitlement
+        const hasEntitlement = customerInfo.entitlements?.active?.['lovers_quarrel_pro'];
+        
+        if (hasEntitlement) {
+          toast({
+            title: 'Purchases Restored',
+            description: 'Your subscription has been restored.'
+          });
+          await checkSubscription();
+          navigate('/home');
+        } else {
+          toast({
+            title: 'No Purchases Found',
+            description: 'No previous purchases were found to restore.'
+          });
+        }
       } else {
         toast({
           title: 'No Purchases Found',
           description: 'No previous purchases were found to restore.'
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to restore purchases';
       toast({
         variant: 'destructive',
         title: 'Restore Error',
-        description: error.message || 'Failed to restore purchases'
+        description: errorMessage
       });
     } finally {
       setLoading(false);
@@ -166,12 +187,13 @@ const Pricing = () => {
           description: 'Complete your payment to start your 7-day free trial!'
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Checkout error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create checkout session';
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message || 'Failed to create checkout session'
+        description: errorMessage
       });
     } finally {
       setLoading(false);
@@ -179,12 +201,14 @@ const Pricing = () => {
   };
 
   const handleSubscribe = (plan: PricingPlan) => {
-    if (isNativeApp) {
-      handleNativePurchase(plan);
+    if (isNative) {
+      handleNativePurchase();
     } else {
       handleStripeSubscribe(plan);
     }
   };
+
+  const isPageLoading = loading || revenueCatLoading || (isNative && !revenueCatReady);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 p-4 py-16">
@@ -239,11 +263,18 @@ const Pricing = () => {
                   className="w-full"
                   variant={plan.popular ? 'default' : 'outline'}
                   onClick={() => handleSubscribe(plan)}
-                  disabled={loading || nativeLoading}
+                  disabled={isPageLoading}
                 >
-                  {isNativeApp 
-                    ? 'Subscribe Now' 
-                    : (fromOnboarding ? 'Start Free Trial & Play' : 'Start 7-Day Free Trial')}
+                  {isPageLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : isNative ? (
+                    'Subscribe Now'
+                  ) : (
+                    fromOnboarding ? 'Start Free Trial & Play' : 'Start 7-Day Free Trial'
+                  )}
                 </Button>
 
                 <div className="space-y-3">
@@ -260,12 +291,12 @@ const Pricing = () => {
         </div>
 
         <div className="text-center mt-8 text-sm text-muted-foreground">
-          {isNativeApp ? (
+          {isNative ? (
             <>
               <Button
                 variant="ghost"
                 onClick={handleRestore}
-                disabled={loading || nativeLoading}
+                disabled={isPageLoading}
                 className="mb-4"
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
