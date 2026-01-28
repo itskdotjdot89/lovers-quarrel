@@ -31,17 +31,12 @@ const Pricing = () => {
     isReady: revenueCatReady, 
     isLoading: revenueCatLoading,
     login: revenueCatLogin,
-    purchasePackage,
-    offerings,
+    presentPaywall,
     restorePurchases: revenueCatRestore,
     error: revenueCatError
   } = useRevenueCat();
   
   const { checkSubscription } = useSubscription();
-
-  // Get the current offering's available package
-  const currentPackage = offerings?.current?.availablePackages?.[0];
-  const productPrice = currentPackage?.product?.priceString;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -60,45 +55,37 @@ const Pricing = () => {
       return;
     }
 
-    if (!currentPackage) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'No subscription packages available. Please try again later.'
-      });
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const result = await purchasePackage(currentPackage);
+      const result = await presentPaywall();
       
-      if (result) {
+      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
         toast({
-          title: 'Purchase Successful!',
+          title: result === PAYWALL_RESULT.PURCHASED ? 'Purchase Successful!' : 'Purchases Restored!',
           description: 'Welcome to Premium! Enjoy all features.'
         });
         await checkSubscription();
         navigate('/home');
-      }
-    } catch (error: unknown) {
-      const err = error as { code?: string; message?: string };
-      // User cancelled is not an error
-      if (err.code === 'PURCHASE_CANCELLED') {
+      } else if (result === PAYWALL_RESULT.CANCELLED) {
         toast({
           title: 'Purchase Cancelled',
           description: 'No worries, you can subscribe anytime.'
         });
-        return;
+      } else if (result === PAYWALL_RESULT.ERROR) {
+        toast({
+          variant: 'destructive',
+          title: 'Purchase Error',
+          description: 'Something went wrong. Please try again.'
+        });
       }
-      
+    } catch (error: unknown) {
       console.error('Native purchase error:', error);
-      const errorMessage = err.message || 'Failed to complete purchase';
+      const err = error as { message?: string };
       toast({
         variant: 'destructive',
         title: 'Purchase Error',
-        description: errorMessage
+        description: err.message || 'Failed to complete purchase'
       });
     } finally {
       setLoading(false);
@@ -224,18 +211,17 @@ const Pricing = () => {
               </div>
               <CardDescription>Unlock everything</CardDescription>
               
-              {/* Show price from StoreKit on iOS, hardcoded on web */}
+              {/* Show price - hardcoded since paywall will show actual price */}
               <div className="mt-4">
                 <div className="flex items-baseline gap-1">
-                  {isNative && productPrice ? (
-                    <span className="text-4xl font-bold">{productPrice}</span>
-                  ) : !isNative ? (
+                  {!isNative && (
                     <>
                       <span className="text-4xl font-bold">$5</span>
                       <span className="text-muted-foreground">/month</span>
                     </>
-                  ) : (
-                    <span className="text-2xl text-muted-foreground">Loading price...</span>
+                  )}
+                  {isNative && (
+                    <span className="text-2xl text-muted-foreground">Tap Subscribe to see pricing</span>
                   )}
                 </div>
               </div>
