@@ -69,8 +69,8 @@ serve(async (req) => {
       "dmpaige92@gmail.com", 
       "samuelkennethjohnsonjr@gmail.com",
       "samuelkennethjonsonjr@gmail.com",
-      "dmpaige93@gmail.com",
-      "demo@loversquarrel.com" // Apple review test account
+      "dmpaige93@gmail.com"
+      // "demo@loversquarrel.com" // Apple review test account - TEMPORARILY DISABLED FOR TESTING
     ];
     
     if (premiumWhitelist.includes(user.email.toLowerCase())) {
