@@ -49,20 +49,14 @@ const Home = () => {
         <div className="text-center py-8 relative">
           <Button
             variant="outline"
-            size="sm"
+            size="icon"
             onClick={() => navigate(user ? '/settings' : '/auth')}
-            className="absolute right-0 top-8 border-border/50 hover:border-crimson-vivid/50 hover:bg-crimson-vivid/10 transition-all"
+            className="absolute right-0 top-8 border-border/50 hover:border-crimson-vivid/50 hover:bg-crimson-vivid/10 transition-all rounded-full w-10 h-10"
           >
             {user ? (
-              <>
-                <User className="w-4 h-4 mr-2" />
-                Profile
-              </>
+              <User className="w-5 h-5" />
             ) : (
-              <>
-                <LogIn className="w-4 h-4 mr-2" />
-                Sign In
-              </>
+              <LogIn className="w-5 h-5" />
             )}
           </Button>
           <img 
