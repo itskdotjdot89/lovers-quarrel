@@ -131,6 +131,59 @@ const Settings = () => {
         </div>
 
         <div className="space-y-4">
+          {/* Account Management - Moved up for better visibility per Apple guidelines */}
+          {isLoggedIn && (
+            <Card className="p-6 bg-card border-2 border-destructive/30">
+              <h2 className="font-display text-lg mb-3 text-foreground">
+                Account Management
+              </h2>
+              <div className="space-y-2">
+                <Button
+                  onClick={handleSignOut}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Sign Out
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4 mr-2" />
+                      )}
+                      Delete Account
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete your
+                        account and remove all your data including favorites, responses,
+                        and subscription information.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteAccount}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete Account
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </Card>
+          )}
+
           {/* Subscription Management */}
           {isLoggedIn && (
             <Card className="p-6 bg-card border-2 border-border">
@@ -305,55 +358,9 @@ const Settings = () => {
           {/* Data Management */}
           <Card className="p-6 bg-card border-2 border-border">
             <h2 className="font-display text-lg mb-3 text-foreground">
-              Account Management
+              Data Management
             </h2>
             <div className="space-y-2">
-              {isLoggedIn && (
-                <>
-                  <Button
-                    onClick={handleSignOut}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    Sign Out
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        className="w-full"
-                        disabled={isDeleting}
-                      >
-                        {isDeleting ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <Trash2 className="w-4 h-4 mr-2" />
-                        )}
-                        Delete Account
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Account</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete your
-                          account and remove all your data including favorites, responses,
-                          and subscription information.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDeleteAccount}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete Account
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
-              )}
               <Button
                 onClick={handleReset}
                 variant="outline"
