@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.loversquarrel.app',
+  appId: 'com.AcpcZnwlYJHI.LoversQuarrel',
   appName: 'lovers-whispers-app',
   webDir: 'dist',
   // NOTE: For development with hot-reload, uncomment the server block below
