@@ -1,6 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { Capacitor } from '@capacitor/core';
+import { 
+  initializeRevenueCat, 
+  loginRevenueCat, 
+  checkEntitlement,
+  isRevenueCatInitialized 
+} from '@/lib/revenuecat';
 
 interface SubscriptionStatus {
   subscribed: boolean;
@@ -28,7 +35,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
 
   const checkSubscription = useCallback(async (): Promise<void> => {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
-    
+
     if (!currentUser) {
       setSubscriptionStatus({
         subscribed: false,
@@ -39,11 +46,53 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    const isNative = Capacitor.isNativePlatform();
+
+    // On native platforms, use RevenueCat for subscription checks
+    if (isNative) {
+      try {
+        console.log('[SubscriptionContext] Native platform - checking RevenueCat');
+
+        // Only proceed if RevenueCat is initialized
+        if (!isRevenueCatInitialized()) {
+          console.log('[SubscriptionContext] RevenueCat not ready, initializing...');
+          const initialized = await initializeRevenueCat(currentUser.id);
+          
+          if (initialized) {
+            await loginRevenueCat(currentUser.id);
+          } else {
+            console.warn('[SubscriptionContext] RevenueCat failed to initialize');
+            // Fall through to Stripe check
+          }
+        }
+
+        // Check entitlement if initialized
+        if (isRevenueCatInitialized()) {
+          const hasAccess = await checkEntitlement();
+          console.log('[SubscriptionContext] RevenueCat entitlement:', hasAccess);
+
+          setSubscriptionStatus({
+            subscribed: hasAccess,
+            product_id: hasAccess ? 'revenuecat_premium' : null,
+            subscription_end: null,
+            status: hasAccess ? 'active' : undefined,
+            loading: false
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('[SubscriptionContext] RevenueCat check failed:', error);
+        // Fall through to Stripe check as backup
+      }
+    }
+
+    // On web or as fallback, use Stripe edge function
     try {
+      console.log('[SubscriptionContext] Checking via Stripe edge function');
       const { data, error } = await supabase.functions.invoke('check-subscription');
-      
+
       if (error) {
-        console.error('Error checking subscription:', error);
+        console.error('[SubscriptionContext] Stripe check error:', error);
         setSubscriptionStatus({
           subscribed: false,
           product_id: null,
@@ -61,7 +110,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         loading: false
       });
     } catch (error) {
-      console.error('Error in checkSubscription:', error);
+      console.error('[SubscriptionContext] Error in checkSubscription:', error);
       setSubscriptionStatus({
         subscribed: false,
         product_id: null,
@@ -90,7 +139,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
         checkSubscription();
       } else {
