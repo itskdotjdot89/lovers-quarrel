@@ -44,6 +44,7 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@revenuecat/purchases-capacitor": "^12.1.0",
+    "@revenuecat/purchases-capacitor-ui": "^12.1.0",
     "@supabase/supabase-js": "^2.81.1",
     "@tanstack/react-query": "^5.83.0",
     "class-variance-authority": "^0.7.1",
