@@ -21,13 +21,19 @@ export const useRevenueCat = () => {
   // Initialize RevenueCat on mount
   useEffect(() => {
     const init = async () => {
+      console.log('[useRevenueCat] Starting init, isNative:', isNative);
+      
       if (!isNative) {
+        console.log('[useRevenueCat] Not native, skipping RevenueCat init');
         setIsReady(true);
         return;
       }
 
       const { data: { user } } = await supabase.auth.getUser();
-      await initializeRevenueCat(user?.id);
+      console.log('[useRevenueCat] User:', user?.id || 'not logged in');
+      
+      const initialized = await initializeRevenueCat(user?.id);
+      console.log('[useRevenueCat] RevenueCat initialized:', initialized);
       
       if (user?.id) {
         await loginRevenueCat(user.id);
@@ -35,13 +41,18 @@ export const useRevenueCat = () => {
 
       // Check entitlement status
       const hasAccess = await checkEntitlement();
+      console.log('[useRevenueCat] Has premium access:', hasAccess);
       setIsPremium(hasAccess);
 
       // Load offerings
+      console.log('[useRevenueCat] Fetching offerings...');
       const currentOfferings = await getOfferings();
+      console.log('[useRevenueCat] Offerings loaded:', !!currentOfferings);
+      console.log('[useRevenueCat] Available packages:', currentOfferings?.availablePackages?.length || 0);
       setOfferings(currentOfferings);
 
       setIsReady(true);
+      console.log('[useRevenueCat] Init complete, isReady: true');
     };
 
     init();
