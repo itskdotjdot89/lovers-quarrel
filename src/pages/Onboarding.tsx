@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import WelcomeCarousel from '@/components/Onboarding/WelcomeCarousel';
 import AgeGate from '@/components/AgeGate';
 import { Button } from '@/components/ui/button';
-import { Check, Sparkles, ArrowRight } from 'lucide-react';
+import { Check, ArrowRight } from 'lucide-react';
 import loversQuarrelLogo from '@/assets/lovers-quarrel-logo.png';
 
 type OnboardingStep = 'welcome' | 'age-gate' | 'trial-prompt';
@@ -22,6 +22,10 @@ const Onboarding = () => {
   };
 
   const handleStartTrial = () => {
+    navigate('/auth?from=onboarding');
+  };
+
+  const handleSignIn = () => {
     navigate('/auth?from=onboarding');
   };
 
@@ -92,7 +96,7 @@ const Onboarding = () => {
           <div className="bg-muted/30 rounded-xl p-4 text-center mb-8 border border-border/50">
             <p className="text-muted-foreground">
               <span className="font-semibold text-foreground">No charge today.</span>
-              {' '}Cancel anytime. After 7 days, just $5-8/month.
+              {' '}Cancel anytime. After 7 days, $4.99/month.
             </p>
           </div>
 
@@ -107,7 +111,7 @@ const Onboarding = () => {
             </Button>
 
             <Button
-              onClick={() => navigate('/auth')}
+              onClick={handleSignIn}
               variant="outline"
               className="w-full h-12 text-base border-border/50 hover:border-crimson-vivid/50 hover:bg-crimson-vivid/10 transition-all"
             >
@@ -116,7 +120,10 @@ const Onboarding = () => {
           </div>
 
           <p className="text-xs text-center text-muted-foreground mt-6">
-            By continuing, you agree to our Terms of Service and Privacy Policy
+            By continuing, you agree to our{' '}
+            <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
+            {' '}and{' '}
+            <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
           </p>
         </div>
       </div>

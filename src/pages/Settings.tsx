@@ -117,7 +117,7 @@ const Settings = () => {
         <div className="flex items-center mb-6">
           <Button
             variant="ghost"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/home')}
             className="text-foreground hover:text-secondary"
           >
             <ArrowLeft className="w-5 h-5" />

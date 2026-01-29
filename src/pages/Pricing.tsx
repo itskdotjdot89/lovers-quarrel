@@ -3,12 +3,13 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, User, Loader2, RotateCcw, Crown, Settings2 } from 'lucide-react';
+import { Check, User, Loader2, RotateCcw, Crown, Settings2, X, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useRevenueCat } from '@/hooks/useRevenueCat';
 import { Capacitor } from '@capacitor/core';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const features = [
   'All 3 decks (600 cards)',
@@ -50,6 +51,14 @@ const Pricing = () => {
       }
     });
   }, [navigate]);
+
+  const handleBack = () => {
+    if (fromOnboarding) {
+      navigate('/auth?from=onboarding');
+    } else {
+      navigate('/home');
+    }
+  };
 
   // Show RevenueCat Paywall on native
   const handleShowPaywall = async () => {
@@ -223,44 +232,56 @@ const Pricing = () => {
   if (userIsPremium && !isPageLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 p-4 py-16">
-        <div className="max-w-md mx-auto text-center">
-          <div className="p-4 rounded-full bg-primary/10 w-fit mx-auto mb-6">
-            <Crown className="h-12 w-12 text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold mb-4">You're Premium!</h1>
-          <p className="text-muted-foreground mb-2">
-            {isTrialing 
-              ? 'You are currently in your free trial period.'
-              : 'Thank you for being a Premium subscriber.'
-            }
-          </p>
-          <p className="text-sm text-muted-foreground mb-8">
-            Enjoy unlimited access to all features.
-          </p>
-          
-          <div className="space-y-3">
-            <Button 
-              onClick={handleManageSubscription}
-              variant="outline"
-              className="w-full"
-              disabled={loading}
-            >
-              <Settings2 className="w-4 h-4 mr-2" />
-              Manage Subscription
-            </Button>
+        <div className="max-w-md mx-auto">
+          {/* Back Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/home')}
+            className="mb-4"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+
+          <div className="text-center">
+            <div className="p-4 rounded-full bg-primary/10 w-fit mx-auto mb-6">
+              <Crown className="h-12 w-12 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold mb-4">You're Premium!</h1>
+            <p className="text-muted-foreground mb-2">
+              {isTrialing 
+                ? 'You are currently in your free trial period.'
+                : 'Thank you for being a Premium subscriber.'
+              }
+            </p>
+            <p className="text-sm text-muted-foreground mb-8">
+              Enjoy unlimited access to all features.
+            </p>
             
-            <Button 
-              onClick={() => navigate('/home')}
-              className="w-full"
-            >
-              Start Playing
-            </Button>
-          </div>
-          
-          <div className="flex justify-center gap-4 mt-8 text-sm">
-            <Link to="/terms" className="text-primary hover:underline">Terms</Link>
-            <span className="text-muted-foreground">•</span>
-            <Link to="/privacy" className="text-primary hover:underline">Privacy</Link>
+            <div className="space-y-3">
+              <Button 
+                onClick={handleManageSubscription}
+                variant="outline"
+                className="w-full"
+                disabled={loading}
+              >
+                <Settings2 className="w-4 h-4 mr-2" />
+                Manage Subscription
+              </Button>
+              
+              <Button 
+                onClick={() => navigate('/home')}
+                className="w-full"
+              >
+                Start Playing
+              </Button>
+            </div>
+            
+            <div className="flex justify-center gap-4 mt-8 text-sm">
+              <Link to="/terms" className="text-primary hover:underline">Terms</Link>
+              <span className="text-muted-foreground">•</span>
+              <Link to="/privacy" className="text-primary hover:underline">Privacy</Link>
+            </div>
           </div>
         </div>
       </div>
@@ -268,9 +289,20 @@ const Pricing = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 p-4 py-16">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 p-4 py-8">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
+        {/* Back/Close Button */}
+        <div className="flex justify-start mb-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleBack}
+          >
+            {fromOnboarding ? <ArrowLeft className="h-5 w-5" /> : <X className="h-5 w-5" />}
+          </Button>
+        </div>
+
+        <div className="text-center mb-8">
           {fromOnboarding && (
             <p className="text-sm text-muted-foreground mb-4">Step 2 of 3</p>
           )}
@@ -296,7 +328,7 @@ const Pricing = () => {
               <div className="mt-4">
                 <div className="flex items-baseline gap-1">
                   {isPageLoading ? (
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <Skeleton className="h-10 w-24" />
                   ) : (
                     <>
                       <span className="text-4xl font-bold">{displayPrice}</span>
@@ -350,22 +382,25 @@ const Pricing = () => {
           </Card>
         </div>
 
-        <div className="text-center mt-8 text-sm text-muted-foreground">
+        {/* App Store Compliance Text */}
+        <div className="text-center mt-8 text-xs text-muted-foreground max-w-md mx-auto space-y-3">
+          {isNative && (
+            <p className="text-[10px] leading-relaxed">
+              Payment will be charged to your Apple ID account at the confirmation of purchase. 
+              Subscription automatically renews unless it is canceled at least 24 hours before 
+              the end of the current period. Your account will be charged for renewal within 
+              24 hours prior to the end of the current period. You can manage and cancel your 
+              subscriptions by going to your account settings on the App Store after purchase.
+            </p>
+          )}
           <p>All plans include a 7-day free trial. Cancel anytime.</p>
-          <p className="mt-2">
-            Cancel from your{' '}
-            <Link to="/settings" className="text-primary hover:underline">
-              account settings
-            </Link>
-            .
-          </p>
           <div className="flex justify-center gap-4 mt-4">
             <Link to="/terms" className="text-primary hover:underline">
-              Terms
+              Terms of Use
             </Link>
             <span>•</span>
             <Link to="/privacy" className="text-primary hover:underline">
-              Privacy
+              Privacy Policy
             </Link>
           </div>
         </div>

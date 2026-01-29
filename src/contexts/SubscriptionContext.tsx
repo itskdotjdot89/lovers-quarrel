@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -19,6 +19,29 @@ interface SubscriptionContextType extends SubscriptionStatus {
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
+// Retry helper with exponential backoff
+const retryWithBackoff = async <T,>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> => {
+  let lastError: Error | undefined;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (attempt < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError;
+};
+
 export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>({
@@ -27,10 +50,22 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     subscription_end: null,
     loading: true
   });
+  const checkInProgress = useRef(false);
+  const lastCheckTime = useRef<number>(0);
 
   const isNative = Capacitor.isNativePlatform();
+  const CHECK_COOLDOWN = 30000; // 30 seconds minimum between checks
 
   const checkSubscription = useCallback(async (): Promise<void> => {
+    // Prevent concurrent checks and rate limit
+    const now = Date.now();
+    if (checkInProgress.current || (now - lastCheckTime.current) < CHECK_COOLDOWN) {
+      return;
+    }
+    
+    checkInProgress.current = true;
+    lastCheckTime.current = now;
+
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     
     if (!currentUser) {
@@ -40,6 +75,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         subscription_end: null,
         loading: false
       });
+      checkInProgress.current = false;
       return;
     }
 
@@ -61,40 +97,38 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
             subscription_end: null,
             loading: false
           });
+          checkInProgress.current = false;
           return;
         }
       }
 
-      // On web, use Stripe edge function
+      // On web, use Stripe edge function with retry
       console.log('[SubscriptionContext] Checking via Stripe edge function');
-      const { data, error } = await supabase.functions.invoke('check-subscription');
       
-      if (error) {
-        console.error('Error checking subscription:', error);
-        setSubscriptionStatus({
-          subscribed: false,
-          product_id: null,
-          subscription_end: null,
-          loading: false
-        });
-        return;
-      }
+      const data = await retryWithBackoff(async () => {
+        const response = await supabase.functions.invoke('check-subscription');
+        if (response.error) {
+          throw new Error(response.error.message || 'Failed to check subscription');
+        }
+        return response.data;
+      });
 
       setSubscriptionStatus({
-        subscribed: data.subscribed || false,
-        product_id: data.product_id,
-        subscription_end: data.subscription_end,
-        status: data.status,
+        subscribed: data?.subscribed || false,
+        product_id: data?.product_id || null,
+        subscription_end: data?.subscription_end || null,
+        status: data?.status,
         loading: false
       });
     } catch (error) {
-      console.error('Error in checkSubscription:', error);
-      setSubscriptionStatus({
-        subscribed: false,
-        product_id: null,
-        subscription_end: null,
+      console.warn('[SubscriptionContext] Error checking subscription:', error);
+      // Don't show error to user, just set as not subscribed
+      setSubscriptionStatus(prev => ({
+        ...prev,
         loading: false
-      });
+      }));
+    } finally {
+      checkInProgress.current = false;
     }
   }, [isNative]);
 
@@ -130,12 +164,12 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    // Check subscription status every minute
+    // Check subscription status every 2 minutes (reduced from 1 minute)
     const interval = setInterval(() => {
       if (user) {
         checkSubscription();
       }
-    }, 60000);
+    }, 120000);
 
     return () => {
       subscription.unsubscribe();
