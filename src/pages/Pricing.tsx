@@ -39,7 +39,6 @@ const Pricing = () => {
     isTrialing,
     purchase, 
     restore,
-    showPaywall,
     showCustomerCenter,
   } = useRevenueCat();
 
@@ -60,43 +59,6 @@ const Pricing = () => {
     }
   };
 
-  // Show RevenueCat Paywall on native
-  const handleShowPaywall = async () => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const result = await showPaywall();
-      
-      if (result.purchased || result.restored) {
-        await checkSubscription();
-        toast({
-          title: 'Welcome to Premium!',
-          description: result.restored 
-            ? 'Your subscription has been restored.' 
-            : 'Your subscription is now active.'
-        });
-        navigate('/home');
-      } else if (result.cancelled) {
-        console.log('User cancelled paywall');
-      } else if (result.error) {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      console.error('Paywall error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to show subscription options. Please try again.'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSubscribe = async () => {
     if (!user) {
       navigate('/auth');
@@ -106,25 +68,9 @@ const Pricing = () => {
     setLoading(true);
 
     try {
-      // On native, use RevenueCat paywall or direct purchase
+      // On native iOS, use RevenueCat direct purchase (shows Apple's native purchase sheet)
       if (isNative) {
-        // Try paywall first - it handles the full purchase flow
-        const result = await showPaywall();
-        
-        if (result.purchased || result.restored) {
-          await checkSubscription();
-          toast({
-            title: 'Welcome to Premium!',
-            description: result.restored 
-              ? 'Your subscription has been restored.' 
-              : 'Your subscription is now active.'
-          });
-          navigate('/home');
-          return;
-        }
-        
-        // If paywall fails but we have offerings, try direct purchase
-        if (!result.success && offerings.length > 0) {
+        if (offerings.length > 0) {
           const success = await purchase(offerings[0]);
           if (success) {
             await checkSubscription();
@@ -134,6 +80,12 @@ const Pricing = () => {
             });
             navigate('/home');
           }
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'No subscription options available. Please try again.'
+          });
         }
         return;
       }
