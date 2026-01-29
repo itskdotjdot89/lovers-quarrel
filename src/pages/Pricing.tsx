@@ -3,11 +3,12 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, User, Loader2, RotateCcw } from 'lucide-react';
+import { Check, User, Loader2, RotateCcw, Crown, Settings2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useRevenueCat } from '@/hooks/useRevenueCat';
+import { Capacitor } from '@capacitor/core';
 
 const features = [
   'All 3 decks (600 cards)',
@@ -26,14 +27,19 @@ const Pricing = () => {
   const [loading, setLoading] = useState(false);
   const fromOnboarding = searchParams.get('from') === 'onboarding';
   
-  const { checkSubscription } = useSubscription();
+  const { checkSubscription, isPremium: isAlreadyPremium } = useSubscription();
   const { 
     isNative, 
     isLoading: rcLoading, 
     offerings, 
-    currentPrice, 
+    currentPrice,
+    trialDuration,
+    isPremium: rcPremium,
+    isTrialing,
     purchase, 
-    restore 
+    restore,
+    showPaywall,
+    showCustomerCenter,
   } = useRevenueCat();
 
   useEffect(() => {
@@ -45,6 +51,43 @@ const Pricing = () => {
     });
   }, [navigate]);
 
+  // Show RevenueCat Paywall on native
+  const handleShowPaywall = async () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await showPaywall();
+      
+      if (result.purchased || result.restored) {
+        await checkSubscription();
+        toast({
+          title: 'Welcome to Premium!',
+          description: result.restored 
+            ? 'Your subscription has been restored.' 
+            : 'Your subscription is now active.'
+        });
+        navigate('/home');
+      } else if (result.cancelled) {
+        console.log('User cancelled paywall');
+      } else if (result.error) {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Paywall error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to show subscription options. Please try again.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubscribe = async () => {
     if (!user) {
       navigate('/auth');
@@ -54,16 +97,34 @@ const Pricing = () => {
     setLoading(true);
 
     try {
-      // On native, use RevenueCat
-      if (isNative && offerings.length > 0) {
-        const success = await purchase(offerings[0]);
-        if (success) {
+      // On native, use RevenueCat paywall or direct purchase
+      if (isNative) {
+        // Try paywall first - it handles the full purchase flow
+        const result = await showPaywall();
+        
+        if (result.purchased || result.restored) {
           await checkSubscription();
           toast({
             title: 'Welcome to Premium!',
-            description: 'Your subscription is now active.'
+            description: result.restored 
+              ? 'Your subscription has been restored.' 
+              : 'Your subscription is now active.'
           });
           navigate('/home');
+          return;
+        }
+        
+        // If paywall fails but we have offerings, try direct purchase
+        if (!result.success && offerings.length > 0) {
+          const success = await purchase(offerings[0]);
+          if (success) {
+            await checkSubscription();
+            toast({
+              title: 'Welcome to Premium!',
+              description: 'Your subscription is now active.'
+            });
+            navigate('/home');
+          }
         }
         return;
       }
@@ -101,6 +162,27 @@ const Pricing = () => {
     }
   };
 
+  // Handle Customer Center for managing subscription
+  const handleManageSubscription = async () => {
+    if (isNative) {
+      setLoading(true);
+      try {
+        const success = await showCustomerCenter();
+        if (!success) {
+          // Fallback: navigate to settings
+          navigate('/manage-subscription');
+        }
+      } catch (error) {
+        console.error('Customer Center error:', error);
+        navigate('/manage-subscription');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      navigate('/manage-subscription');
+    }
+  };
+
   const handleRestore = async () => {
     setLoading(true);
     try {
@@ -133,7 +215,57 @@ const Pricing = () => {
 
   // Get display price - use RevenueCat price on native, fallback to $4.99
   const displayPrice = currentPrice || '$4.99';
+  const displayTrialDuration = trialDuration || '7 days';
   const isPageLoading = rcLoading && isNative;
+  const userIsPremium = isAlreadyPremium || rcPremium;
+
+  // If user is already premium, show management option
+  if (userIsPremium && !isPageLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 p-4 py-16">
+        <div className="max-w-md mx-auto text-center">
+          <div className="p-4 rounded-full bg-primary/10 w-fit mx-auto mb-6">
+            <Crown className="h-12 w-12 text-primary" />
+          </div>
+          <h1 className="text-3xl font-bold mb-4">You're Premium!</h1>
+          <p className="text-muted-foreground mb-2">
+            {isTrialing 
+              ? 'You are currently in your free trial period.'
+              : 'Thank you for being a Premium subscriber.'
+            }
+          </p>
+          <p className="text-sm text-muted-foreground mb-8">
+            Enjoy unlimited access to all features.
+          </p>
+          
+          <div className="space-y-3">
+            <Button 
+              onClick={handleManageSubscription}
+              variant="outline"
+              className="w-full"
+              disabled={loading}
+            >
+              <Settings2 className="w-4 h-4 mr-2" />
+              Manage Subscription
+            </Button>
+            
+            <Button 
+              onClick={() => navigate('/home')}
+              className="w-full"
+            >
+              Start Playing
+            </Button>
+          </div>
+          
+          <div className="flex justify-center gap-4 mt-8 text-sm">
+            <Link to="/terms" className="text-primary hover:underline">Terms</Link>
+            <span className="text-muted-foreground">•</span>
+            <Link to="/privacy" className="text-primary hover:underline">Privacy</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 p-4 py-16">
