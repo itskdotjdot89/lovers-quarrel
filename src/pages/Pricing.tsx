@@ -3,10 +3,11 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, User, Loader2 } from 'lucide-react';
+import { Check, User, Loader2, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useRevenueCat } from '@/hooks/useRevenueCat';
 
 const features = [
   'All 3 decks (600 cards)',
@@ -26,6 +27,14 @@ const Pricing = () => {
   const fromOnboarding = searchParams.get('from') === 'onboarding';
   
   const { checkSubscription } = useSubscription();
+  const { 
+    isNative, 
+    isLoading: rcLoading, 
+    offerings, 
+    currentPrice, 
+    purchase, 
+    restore 
+  } = useRevenueCat();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -45,6 +54,21 @@ const Pricing = () => {
     setLoading(true);
 
     try {
+      // On native, use RevenueCat
+      if (isNative && offerings.length > 0) {
+        const success = await purchase(offerings[0]);
+        if (success) {
+          await checkSubscription();
+          toast({
+            title: 'Welcome to Premium!',
+            description: 'Your subscription is now active.'
+          });
+          navigate('/home');
+        }
+        return;
+      }
+
+      // On web, use Stripe
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { price_id: 'price_1STYUuLisf4T9XH8vUJvgxrt' }
       });
@@ -77,6 +101,40 @@ const Pricing = () => {
     }
   };
 
+  const handleRestore = async () => {
+    setLoading(true);
+    try {
+      const success = await restore();
+      if (success) {
+        await checkSubscription();
+        toast({
+          title: 'Purchases Restored',
+          description: 'Your subscription has been restored.'
+        });
+        navigate('/home');
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'No Purchases Found',
+          description: 'No previous purchases were found to restore.'
+        });
+      }
+    } catch (error) {
+      console.error('Restore error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Restore Failed',
+        description: 'Unable to restore purchases. Please try again.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get display price - use RevenueCat price on native, fallback to $4.99
+  const displayPrice = currentPrice || '$4.99';
+  const isPageLoading = rcLoading && isNative;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 p-4 py-16">
       <div className="max-w-6xl mx-auto">
@@ -105,8 +163,14 @@ const Pricing = () => {
               
               <div className="mt-4">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold">$4.99</span>
-                  <span className="text-muted-foreground">/month</span>
+                  {isPageLoading ? (
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  ) : (
+                    <>
+                      <span className="text-4xl font-bold">{displayPrice}</span>
+                      <span className="text-muted-foreground">/month</span>
+                    </>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   7-day free trial included
@@ -118,7 +182,7 @@ const Pricing = () => {
               <Button
                 className="w-full"
                 onClick={handleSubscribe}
-                disabled={loading}
+                disabled={loading || isPageLoading}
               >
                 {loading ? (
                   <>
@@ -129,6 +193,18 @@ const Pricing = () => {
                   fromOnboarding ? 'Start Free Trial & Play' : 'Start 7-Day Free Trial'
                 )}
               </Button>
+
+              {isNative && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleRestore}
+                  disabled={loading}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Restore Purchases
+                </Button>
+              )}
 
               <div className="space-y-3">
                 {features.map((feature, index) => (

@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { initializeRevenueCat, checkEntitlement, loginRevenueCat } from '@/lib/revenuecat';
 
 interface SubscriptionStatus {
   subscribed: boolean;
@@ -26,6 +28,8 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     loading: true
   });
 
+  const isNative = Capacitor.isNativePlatform();
+
   const checkSubscription = useCallback(async (): Promise<void> => {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     
@@ -40,6 +44,29 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      // On native platforms, use RevenueCat
+      if (isNative) {
+        console.log('[SubscriptionContext] Checking via RevenueCat');
+        
+        // Initialize RevenueCat if not already
+        const initialized = await initializeRevenueCat(currentUser.id);
+        
+        if (initialized) {
+          await loginRevenueCat(currentUser.id);
+          const hasEntitlement = await checkEntitlement();
+          
+          setSubscriptionStatus({
+            subscribed: hasEntitlement,
+            product_id: hasEntitlement ? 'lq_premium_monthly' : null,
+            subscription_end: null,
+            loading: false
+          });
+          return;
+        }
+      }
+
+      // On web, use Stripe edge function
+      console.log('[SubscriptionContext] Checking via Stripe edge function');
       const { data, error } = await supabase.functions.invoke('check-subscription');
       
       if (error) {
@@ -69,7 +96,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         loading: false
       });
     }
-  }, []);
+  }, [isNative]);
 
   useEffect(() => {
     // Initial check
