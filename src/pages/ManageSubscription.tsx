@@ -5,102 +5,72 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Copy, Check, ExternalLink } from 'lucide-react';
-
-interface Subscription {
-  id: string;
-  bundle_type: 'individual' | 'couple';
-  plan_interval: 'monthly' | 'annual';
-  status: 'active' | 'canceled' | 'past_due' | 'trialing';
-  trial_end: string | null;
-  current_period_end: string | null;
-  linked_users: string[];
-}
+import { ArrowLeft, ExternalLink, Loader2, Crown } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { useRevenueCat } from '@/hooks/useRevenueCat';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 const ManageSubscription = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [inviteCode, setInviteCode] = useState<string>('');
-  const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+  
+  const isNative = Capacitor.isNativePlatform();
+  const { 
+    isPremium: rcPremium, 
+    isTrialing: rcTrialing,
+    showCustomerCenter,
+    isLoading: rcLoading 
+  } = useRevenueCat();
+  const { 
+    subscribed: stripePremium, 
+    subscription_end,
+    status: stripeStatus,
+    loading: subLoading 
+  } = useSubscription();
+
+  const isPremium = isNative ? rcPremium : stripePremium;
+  const isTrialing = isNative ? rcTrialing : stripeStatus === 'trialing';
+  const isLoading = isNative ? rcLoading : subLoading;
 
   useEffect(() => {
-    loadSubscription();
-  }, []);
-
-  const loadSubscription = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .or(`owner_id.eq.${user.id},linked_users.cs.{${user.id}}`)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        navigate('/pricing');
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/auth');
       }
-      setLoading(false);
-      return;
-    }
+    };
+    checkAuth();
+  }, [navigate]);
 
-    setSubscription(data as Subscription);
-    setLoading(false);
-  };
-
-  const generateInviteCode = async () => {
-    if (!subscription) return;
-
-    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase.from('subscription_invites').insert({
-      subscription_id: subscription.id,
-      inviter_id: user.id,
-      invite_code: code,
-      expires_at: expiresAt.toISOString()
-    });
-
-    if (error) {
+  // Handle RevenueCat Customer Center for iOS
+  const handleManageNative = async () => {
+    setLoading(true);
+    try {
+      const success = await showCustomerCenter();
+      if (!success) {
+        toast({
+          variant: 'destructive',
+          title: 'Unable to Open',
+          description: 'Please manage your subscription in Settings > Apple ID > Subscriptions'
+        });
+      }
+    } catch (error) {
+      console.error('Customer Center error:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to generate invite code'
+        description: 'Failed to open subscription management.'
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    setInviteCode(code);
-    toast({
-      title: 'Invite Created!',
-      description: 'Share this code with your partner'
-    });
   };
 
-  const copyInviteLink = () => {
-    const inviteLink = `${window.location.origin}/auth?invite=${inviteCode}`;
-    navigator.clipboard.writeText(inviteLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    
-    toast({
-      title: 'Copied!',
-      description: 'Invite link copied to clipboard'
-    });
-  };
-
-  const openCustomerPortal = async () => {
-    setLoading(true);
+  // Handle Stripe Customer Portal for Web
+  const handleManageWeb = async () => {
+    setPortalLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('customer-portal');
       
@@ -120,15 +90,11 @@ const ManageSubscription = () => {
         description: error.message || 'Failed to open customer portal'
       });
     } finally {
-      setLoading(false);
+      setPortalLoading(false);
     }
   };
 
-  const getPlanName = (bundleType: string) => {
-    return bundleType === 'individual' ? 'Premium' : bundleType;
-  };
-
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | undefined) => {
     switch (status) {
       case 'active': return 'bg-green-500';
       case 'trialing': return 'bg-blue-500';
@@ -138,36 +104,42 @@ const ManageSubscription = () => {
     }
   };
 
-  if (loading) {
+  const getStatusLabel = () => {
+    if (isTrialing) return 'TRIAL';
+    if (isPremium) return 'ACTIVE';
+    return 'INACTIVE';
+  };
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading subscription...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background/95 to-primary/5">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (!subscription) {
+  if (!isPremium) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background/95 to-primary/5">
         <Card className="max-w-md w-full">
           <CardHeader>
-            <CardTitle>No Subscription Found</CardTitle>
+            <CardTitle>No Active Subscription</CardTitle>
             <CardDescription>
               You don't have an active subscription yet.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
             <Button onClick={() => navigate('/pricing')} className="w-full">
               View Plans
+            </Button>
+            <Button onClick={() => navigate('/home')} variant="outline" className="w-full">
+              Back to Home
             </Button>
           </CardContent>
         </Card>
       </div>
     );
   }
-
-  const maxUsers = subscription.bundle_type === 'individual' ? 1 : 2;
-  const canInvite = subscription.linked_users.length < maxUsers - 1;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 p-4 py-16">
@@ -181,63 +153,100 @@ const ManageSubscription = () => {
           Back to Settings
         </Button>
 
+        {/* Premium Status Card */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Current Subscription</CardTitle>
-              <Badge className={getStatusColor(subscription.status)}>
-                {subscription.status.toUpperCase()}
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <Crown className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle>Premium Subscription</CardTitle>
+              </div>
+              <Badge className={getStatusColor(isTrialing ? 'trialing' : 'active')}>
+                {getStatusLabel()}
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-2xl font-bold">{getPlanName(subscription.bundle_type)}</p>
-              <p className="text-muted-foreground capitalize">
-                {subscription.plan_interval} billing
+              <p className="text-2xl font-bold">Lovers' Quarrel Premium</p>
+              <p className="text-muted-foreground">
+                {isTrialing 
+                  ? 'You are currently in your free trial period.'
+                  : 'Full access to all premium features.'
+                }
               </p>
             </div>
 
-            {subscription.status === 'trialing' && subscription.trial_end && (
-              <div className="p-4 bg-blue-500/10 rounded-lg">
-                <p className="text-sm font-medium">Free Trial Active</p>
+            {isTrialing && (
+              <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                <p className="text-sm font-medium text-blue-400">Free Trial Active</p>
                 <p className="text-sm text-muted-foreground">
-                  Trial ends: {new Date(subscription.trial_end).toLocaleDateString()}
+                  Enjoy full access during your trial period.
                 </p>
               </div>
             )}
 
-            {subscription.current_period_end && subscription.status === 'active' && (
+            {!isNative && subscription_end && !isTrialing && (
               <div className="text-sm text-muted-foreground">
-                Next billing date: {new Date(subscription.current_period_end).toLocaleDateString()}
+                Next billing date: {new Date(subscription_end).toLocaleDateString()}
               </div>
             )}
           </CardContent>
         </Card>
 
+        {/* Management Actions */}
         <Card>
           <CardHeader>
-            <CardTitle>Manage Plan</CardTitle>
+            <CardTitle>Manage Subscription</CardTitle>
+            <CardDescription>
+              {isNative 
+                ? 'Manage your subscription through the App Store.'
+                : 'Manage your subscription, payment methods, and billing.'
+              }
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={openCustomerPortal}
-              disabled={loading}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Manage Payment & Billing
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => navigate('/pricing')}
-            >
-              Change Plan
-            </Button>
+          <CardContent>
+            {isNative ? (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleManageNative}
+                disabled={loading}
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                )}
+                Manage in App Store
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleManageWeb}
+                disabled={portalLoading}
+              >
+                {portalLoading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                )}
+                Manage Payment & Billing
+              </Button>
+            )}
           </CardContent>
         </Card>
+
+        {/* Help Text */}
+        <p className="text-xs text-center text-muted-foreground">
+          {isNative 
+            ? 'Subscriptions are managed through your Apple ID account settings.'
+            : 'You will be redirected to Stripe to manage your subscription.'
+          }
+        </p>
       </div>
     </div>
   );
