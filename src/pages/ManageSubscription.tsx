@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Copy, Check, Loader2, Settings2, ExternalLink } from 'lucide-react';
-import { useRevenueCat } from '@/hooks/useRevenueCat';
+import { ArrowLeft, Copy, Check, ExternalLink } from 'lucide-react';
 
 interface Subscription {
   id: string;
@@ -25,8 +24,6 @@ const ManageSubscription = () => {
   const [loading, setLoading] = useState(true);
   const [inviteCode, setInviteCode] = useState<string>('');
   const [copied, setCopied] = useState(false);
-  const [isOpeningCustomerCenter, setIsOpeningCustomerCenter] = useState(false);
-  const { isNative, isReady: revenueCatReady, presentCustomerCenter } = useRevenueCat();
 
   useEffect(() => {
     loadSubscription();
@@ -218,67 +215,27 @@ const ManageSubscription = () => {
           </CardContent>
         </Card>
 
-        {/* Removed: Linked Accounts section - couples tier deprecated */}
-
         <Card>
           <CardHeader>
             <CardTitle>Manage Plan</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {/* Show different UI based on platform */}
-            {isNative && revenueCatReady ? (
-              <>
-                {/* iOS/Native: Use RevenueCat Customer Center */}
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={async () => {
-                    setIsOpeningCustomerCenter(true);
-                    try {
-                      await presentCustomerCenter();
-                    } finally {
-                      setIsOpeningCustomerCenter(false);
-                    }
-                  }}
-                  disabled={isOpeningCustomerCenter}
-                >
-                  {isOpeningCustomerCenter ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Opening...
-                    </>
-                  ) : (
-                    <>
-                      <Settings2 className="w-4 h-4 mr-2" />
-                      Manage Subscription
-                    </>
-                  )}
-                </Button>
-                <p className="text-xs text-muted-foreground text-center">
-                  Manage your subscription, billing, and plan changes through the App Store
-                </p>
-              </>
-            ) : (
-              <>
-                {/* Web: Use Stripe Customer Portal */}
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={openCustomerPortal}
-                  disabled={loading}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Manage Payment & Billing
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => navigate('/pricing')}
-                >
-                  Change Plan
-                </Button>
-              </>
-            )}
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={openCustomerPortal}
+              disabled={loading}
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Manage Payment & Billing
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => navigate('/pricing')}
+            >
+              Change Plan
+            </Button>
           </CardContent>
         </Card>
       </div>

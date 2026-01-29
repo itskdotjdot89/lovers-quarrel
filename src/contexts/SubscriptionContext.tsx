@@ -1,8 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { Capacitor } from '@capacitor/core';
-import { REVENUECAT_CONFIG } from '@/lib/revenuecat';
 
 interface SubscriptionStatus {
   subscribed: boolean;
@@ -15,14 +13,12 @@ interface SubscriptionStatus {
 interface SubscriptionContextType extends SubscriptionStatus {
   checkSubscription: () => Promise<void>;
   isPremium: boolean;
-  isNative: boolean;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isNative, setIsNative] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>({
     subscribed: false,
     product_id: null,
@@ -30,40 +26,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     loading: true
   });
 
-  // Check if running on native platform
-  useEffect(() => {
-    const platform = Capacitor.getPlatform();
-    setIsNative(platform === 'ios' || platform === 'android');
-  }, []);
-
-  const checkNativeSubscription = useCallback(async (): Promise<void> => {
-    try {
-      // Dynamically import RevenueCat SDK
-      const { Purchases } = await import('@revenuecat/purchases-capacitor');
-      
-      const { customerInfo } = await Purchases.getCustomerInfo();
-      const entitlement = customerInfo.entitlements?.active?.[REVENUECAT_CONFIG.entitlementId];
-      
-      if (entitlement) {
-        setSubscriptionStatus({
-          subscribed: true,
-          product_id: entitlement.productIdentifier || 'revenuecat_premium',
-          subscription_end: entitlement.expirationDate || null,
-          status: 'active',
-          loading: false
-        });
-      } else {
-        // No active entitlement - fall back to Stripe check
-        await checkStripeSubscription();
-      }
-    } catch (error) {
-      console.error('[SubscriptionContext] RevenueCat check failed, falling back to Stripe:', error);
-      // Fall back to Stripe check on error
-      await checkStripeSubscription();
-    }
-  }, []);
-
-  const checkStripeSubscription = useCallback(async (): Promise<void> => {
+  const checkSubscription = useCallback(async (): Promise<void> => {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     
     if (!currentUser) {
@@ -107,28 +70,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       });
     }
   }, []);
-
-  const checkSubscription = useCallback(async (): Promise<void> => {
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    
-    if (!currentUser) {
-      setSubscriptionStatus({
-        subscribed: false,
-        product_id: null,
-        subscription_end: null,
-        loading: false
-      });
-      return;
-    }
-
-    // For native platforms, check RevenueCat first, then fall back to Stripe
-    if (isNative) {
-      await checkNativeSubscription();
-    } else {
-      // For web, check Stripe directly
-      await checkStripeSubscription();
-    }
-  }, [isNative, checkNativeSubscription, checkStripeSubscription]);
 
   useEffect(() => {
     // Initial check
@@ -182,8 +123,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       value={{
         ...subscriptionStatus,
         checkSubscription,
-        isPremium,
-        isNative
+        isPremium
       }}
     >
       {children}
