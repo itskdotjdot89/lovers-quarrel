@@ -1,184 +1,117 @@
 
 
-# User Flow Improvements Plan
+# Keep Custom Pricing UI with RevenueCat Purchase Flow
 
-## Overview
+## What You Want
 
-After reviewing the codebase, I've identified several areas where the user flows can be improved for better usability and a smoother experience. This plan covers enhancements across onboarding, authentication, subscription management, navigation, and gameplay flows.
+Keep your beautiful custom `/pricing` page design, but when the user taps "Start 7-Day Free Trial" on iOS, it triggers RevenueCat's native App Store purchase sheet directly (not RevenueCat's paywall UI).
 
----
-
-## Current Flow Analysis
+## How It Works
 
 ```text
-┌─────────────┐     ┌───────────┐     ┌──────────────┐     ┌─────────┐
-│   Index     │────▶│ Onboarding│────▶│     Auth     │────▶│ Pricing │
-│  (Router)   │     │ (Welcome) │     │ (Sign Up/In) │     │ (Trial) │
-└─────────────┘     └───────────┘     └──────────────┘     └─────────┘
-                                                                │
-                                                                ▼
-┌─────────────┐     ┌───────────┐     ┌──────────────┐     ┌─────────┐
-│  Gameplay   │◀────│   Decks   │◀────│     Home     │◀────│ Success │
-│   (Cards)   │     │ Selection │     │   (Menu)     │     │         │
-└─────────────┘     └───────────┘     └──────────────┘     └─────────┘
+User taps "Start 7-Day Free Trial"
+              │
+              ▼
+      ┌───────────────┐
+      │  Is iOS/Native?│
+      └───────┬───────┘
+              │
+      ┌───────┴───────┐
+     YES              NO
+      │               │
+      ▼               ▼
+┌─────────────┐  ┌─────────────────┐
+│ RevenueCat  │  │ Stripe Checkout │
+│ purchase()  │  │ (existing flow) │
+│             │  │                 │
+│ Shows native│  │                 │
+│ App Store   │  │                 │
+│ sheet only  │  │                 │
+└──────┬──────┘  └─────────────────┘
+       │
+       ▼
+┌─────────────────────────┐
+│ Apple's native purchase │
+│ confirmation sheet      │
+│ (Touch ID / Face ID)    │
+└─────────────────────────┘
 ```
 
----
+## Implementation
 
-## Issues Identified and Solutions
+### File: `src/pages/Pricing.tsx`
 
-### 1. Authentication Flow Improvements
+**Current behavior (lines 100-139):**
+The `handleSubscribe` function currently calls `showPaywall()` first, which opens RevenueCat's full native paywall UI.
 
-**Current Issues:**
-- No "Forgot Password" functionality
-- No loading states during auth operations
-- Sign-up success message doesn't explain email confirmation process
-- Terms/Privacy links mentioned but not clickable in onboarding
+**New behavior:**
+Change `handleSubscribe` to call `purchase(offerings[0])` directly on iOS, which:
+- Keeps your custom React pricing UI visible
+- Only triggers Apple's native purchase confirmation sheet
+- Handles the purchase result and navigates accordingly
 
-**Improvements:**
-- Add password reset functionality with "Forgot Password?" link
-- Add clear feedback after sign-up about email confirmation (if enabled)
-- Make Terms of Service and Privacy Policy links functional in onboarding trial prompt
-- Add more informative loading states
+### Code Change
 
-### 2. Pricing Page Enhancements
+Replace the iOS handling in `handleSubscribe` to skip the paywall and purchase directly:
 
-**Current Issues:**
-- On iOS, the Stripe price hardcode `$4.99` shows when RevenueCat hasn't loaded yet
-- No back/close button to exit the pricing page
-- Missing App Store compliance text about subscriptions auto-renewing
-- Price display says "$5-8/month" in onboarding but "$4.99/month" on pricing page (inconsistency)
+```typescript
+const handleSubscribe = async () => {
+  if (!user) {
+    navigate('/auth');
+    return;
+  }
 
-**Improvements:**
-- Add back navigation button
-- Add App Store compliance disclosure text about auto-renewal billing
-- Fix price consistency across screens
-- Show skeleton/loading state while fetching RevenueCat prices
+  setLoading(true);
 
-### 3. Navigation Consistency
+  try {
+    // On native iOS, use RevenueCat direct purchase
+    if (isNative) {
+      if (offerings.length > 0) {
+        const success = await purchase(offerings[0]);
+        if (success) {
+          await checkSubscription();
+          toast({
+            title: 'Welcome to Premium!',
+            description: 'Your subscription is now active.'
+          });
+          navigate('/home');
+        }
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'No subscription options available. Please try again.'
+        });
+      }
+      return;
+    }
 
-**Current Issues:**
-- Settings "back" button goes to "/" but should go to "/home"
-- Some pages lack clear back navigation
-- Home button icon changes between User and LogIn based on auth state which may confuse users
+    // On web, use Stripe (unchanged)
+    // ... existing Stripe code
+  } catch (error) {
+    // ... existing error handling
+  } finally {
+    setLoading(false);
+  }
+};
+```
 
-**Improvements:**
-- Standardize back navigation across all pages
-- Consider always showing Settings icon on Home (it works for both logged in and logged out states)
+### Also Remove Unused Function
 
-### 4. Onboarding Flow Polish
+The `handleShowPaywall` function (lines 64-98) can be removed since it's no longer needed - it was calling RevenueCat's native paywall which we're bypassing.
 
-**Current Issues:**
-- Price shown as "$5-8/month" is vague
-- "Already have an account?" button goes to /auth without preserving context
-- Terms/Privacy text is not interactive
+## User Experience After Change
 
-**Improvements:**
-- Display accurate pricing from RevenueCat or use consistent fallback
-- Preserve "from=onboarding" context when signing in
-- Make Terms and Privacy links clickable with navigation
-
-### 5. Subscription Management
-
-**Current Issues:**
-- ManageSubscription page queries database `subscriptions` table but RevenueCat users won't have records there
-- On native (iOS), should use RevenueCat Customer Center instead of Stripe portal
-- "Change Plan" button navigates to pricing but there's only one plan
-
-**Improvements:**
-- Platform-aware subscription management (RevenueCat on iOS, Stripe on web)
-- Remove "Change Plan" button since only one tier exists
-- Show subscription status from the correct source (RevenueCat vs Stripe)
-
-### 6. Error Handling and Edge Cases
-
-**Current Issues:**
-- Console shows repeated subscription check errors (edge function returning non-2xx)
-- No offline state handling
-- No retry mechanism for failed API calls
-
-**Improvements:**
-- Add error boundaries for graceful error handling
-- Implement better retry logic with exponential backoff
-- Add user-friendly error messages
-
-### 7. iOS-Specific Compliance
-
-**Current Issues:**
-- Pricing page needs App Store subscription disclosure text
-- "Restore Purchases" is present (good)
-- Need to ensure paywall close button is visible
-
-**Improvements:**
-- Add required legal text: "Payment will be charged to your Apple ID account at the confirmation of purchase. Subscription automatically renews unless it is canceled at least 24 hours before the end of the current period."
-- Verify paywall has dismiss capability (already set with `displayCloseButton: true`)
-
----
-
-## Technical Implementation
-
-### Phase 1: Authentication Improvements
-
-**File: `src/pages/Auth.tsx`**
-- Add "Forgot Password?" link with password reset flow
-- Improve loading states with skeleton UI
-- Add clearer success/error messaging
-
-### Phase 2: Pricing Page Updates
-
-**File: `src/pages/Pricing.tsx`**
-- Add back/close navigation button
-- Add App Store compliance disclosure
-- Fix loading skeleton for prices
-- Standardize pricing display
-
-### Phase 3: Onboarding Polish
-
-**File: `src/pages/Onboarding.tsx`**
-- Make Terms/Privacy links clickable
-- Fix "Already have an account?" to preserve context
-- Use consistent pricing text
-
-### Phase 4: Navigation Fixes
-
-**File: `src/pages/Settings.tsx`**
-- Change back button to navigate to "/home"
-
-**File: `src/pages/ManageSubscription.tsx`**
-- Make platform-aware (RevenueCat on iOS, Stripe on web)
-- Remove "Change Plan" option
-
-### Phase 5: Error Handling
-
-**File: `src/contexts/SubscriptionContext.tsx`**
-- Add retry logic with backoff
-- Reduce check frequency to prevent rate limiting
-- Handle edge function errors gracefully
-
----
+1. User sees your custom `/pricing` page design
+2. User taps "Start 7-Day Free Trial"
+3. Apple's native purchase sheet slides up (Face ID/Touch ID confirmation)
+4. After successful purchase, navigates to `/home` with success toast
 
 ## Summary of Changes
 
-| Area | Change | Priority |
-|------|--------|----------|
-| Auth | Add Forgot Password | Medium |
-| Pricing | Add back button | High |
-| Pricing | Add App Store disclosure | High (iOS compliance) |
-| Onboarding | Make legal links clickable | High (compliance) |
-| Onboarding | Fix pricing consistency | Medium |
-| Settings | Fix back navigation | Low |
-| ManageSubscription | Platform-aware subscription management | High |
-| SubscriptionContext | Fix repeated API calls/errors | High |
-
----
-
-## Expected Outcome
-
-After implementation:
-- Smooth, intuitive onboarding flow
-- Clear subscription management across platforms
-- App Store compliance for iOS
-- Consistent navigation patterns
-- Better error handling and user feedback
-- Professional, polished user experience
+| Change | Description |
+|--------|-------------|
+| Modify `handleSubscribe` | Use `purchase(offerings[0])` directly instead of `showPaywall()` |
+| Remove `handleShowPaywall` | No longer needed since we're not using RevenueCat's paywall UI |
+| Add error handling | Show toast if no offerings are available |
 
