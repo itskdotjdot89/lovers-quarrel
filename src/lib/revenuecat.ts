@@ -14,7 +14,7 @@ import {
 } from '@revenuecat/purchases-capacitor-ui';
 
 // RevenueCat Configuration
-const REVENUECAT_API_KEY = 'test_gKXRZLjQPHOnHqiJoRbDyawaBuU';
+const REVENUECAT_API_KEY = 'appl_DnGNlNmlksfybRbsarhvRSSXBOJ';
 const ENTITLEMENT_ID = 'Lovers Quarrel Pro';
 
 // Product identifiers
