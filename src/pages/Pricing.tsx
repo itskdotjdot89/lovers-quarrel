@@ -3,10 +3,9 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, User, RotateCcw, Loader2 } from 'lucide-react';
+import { Check, User, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { User as SupabaseUser } from '@supabase/supabase-js';
-import { useRevenueCat, PAYWALL_RESULT } from '@/hooks/useRevenueCat';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 
 const features = [
@@ -26,16 +25,6 @@ const Pricing = () => {
   const [loading, setLoading] = useState(false);
   const fromOnboarding = searchParams.get('from') === 'onboarding';
   
-  const { 
-    isNative, 
-    isReady: revenueCatReady, 
-    isLoading: revenueCatLoading,
-    login: revenueCatLogin,
-    presentPaywall,
-    restorePurchases: revenueCatRestore,
-    error: revenueCatError
-  } = useRevenueCat();
-  
   const { checkSubscription } = useSubscription();
 
   useEffect(() => {
@@ -43,93 +32,9 @@ const Pricing = () => {
       setUser(user);
       if (!user) {
         navigate('/auth');
-      } else if (isNative && revenueCatReady) {
-        revenueCatLogin(user.id);
       }
     });
-  }, [navigate, isNative, revenueCatReady, revenueCatLogin]);
-
-  const handleNativePurchase = async () => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const result = await presentPaywall();
-      
-      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
-        toast({
-          title: result === PAYWALL_RESULT.PURCHASED ? 'Purchase Successful!' : 'Purchases Restored!',
-          description: 'Welcome to Premium! Enjoy all features.'
-        });
-        await checkSubscription();
-        navigate('/home');
-      } else if (result === PAYWALL_RESULT.CANCELLED) {
-        toast({
-          title: 'Purchase Cancelled',
-          description: 'No worries, you can subscribe anytime.'
-        });
-      } else if (result === PAYWALL_RESULT.ERROR) {
-        toast({
-          variant: 'destructive',
-          title: 'Purchase Error',
-          description: 'Something went wrong. Please try again.'
-        });
-      }
-    } catch (error: unknown) {
-      console.error('Native purchase error:', error);
-      const err = error as { message?: string };
-      toast({
-        variant: 'destructive',
-        title: 'Purchase Error',
-        description: err.message || 'Failed to complete purchase'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRestore = async () => {
-    setLoading(true);
-    try {
-      const customerInfo = await revenueCatRestore();
-      
-      if (customerInfo) {
-        const hasEntitlement = customerInfo.entitlements?.active?.['lovers_quarrel_pro'];
-        
-        if (hasEntitlement) {
-          toast({
-            title: 'Purchases Restored',
-            description: 'Your subscription has been restored.'
-          });
-          await checkSubscription();
-          navigate('/home');
-        } else {
-          toast({
-            title: 'No Purchases Found',
-            description: 'No previous purchases were found to restore.'
-          });
-        }
-      } else {
-        toast({
-          title: 'No Purchases Found',
-          description: 'No previous purchases were found to restore.'
-        });
-      }
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to restore purchases';
-      toast({
-        variant: 'destructive',
-        title: 'Restore Error',
-        description: errorMessage
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [navigate]);
 
   const handleStripeSubscribe = async () => {
     if (!user) {
@@ -172,31 +77,18 @@ const Pricing = () => {
     }
   };
 
-  const handleSubscribe = () => {
-    if (isNative) {
-      handleNativePurchase();
-    } else {
-      handleStripeSubscribe();
-    }
-  };
-
-  const isPageLoading = loading || revenueCatLoading || (isNative && !revenueCatReady);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 p-4 py-16">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
-          {fromOnboarding && !isNative && (
+          {fromOnboarding && (
             <p className="text-sm text-muted-foreground mb-4">Step 2 of 3</p>
           )}
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            {isNative ? 'Upgrade to Premium' : 'Choose Your Plan'}
+            Choose Your Plan
           </h1>
           <p className="text-muted-foreground text-lg mb-6">
-            {isNative 
-              ? 'Unlock all features and content'
-              : 'Start your 7-day free trial. Cancel anytime.'
-            }
+            Start your 7-day free trial. Cancel anytime.
           </p>
         </div>
 
@@ -211,18 +103,10 @@ const Pricing = () => {
               </div>
               <CardDescription>Unlock everything</CardDescription>
               
-              {/* Show price - hardcoded since paywall will show actual price */}
               <div className="mt-4">
                 <div className="flex items-baseline gap-1">
-                  {!isNative && (
-                    <>
-                      <span className="text-4xl font-bold">$5</span>
-                      <span className="text-muted-foreground">/month</span>
-                    </>
-                  )}
-                  {isNative && (
-                    <span className="text-2xl text-muted-foreground">Tap Subscribe to see pricing</span>
-                  )}
+                  <span className="text-4xl font-bold">$5</span>
+                  <span className="text-muted-foreground">/month</span>
                 </div>
               </div>
             </CardHeader>
@@ -230,16 +114,14 @@ const Pricing = () => {
             <CardContent className="space-y-4">
               <Button
                 className="w-full"
-                onClick={handleSubscribe}
-                disabled={isPageLoading}
+                onClick={handleStripeSubscribe}
+                disabled={loading}
               >
-                {isPageLoading ? (
+                {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Loading...
                   </>
-                ) : isNative ? (
-                  'Subscribe'
                 ) : (
                   fromOnboarding ? 'Start Free Trial & Play' : 'Start 7-Day Free Trial'
                 )}
@@ -258,57 +140,23 @@ const Pricing = () => {
         </div>
 
         <div className="text-center mt-8 text-sm text-muted-foreground">
-          {isNative ? (
-            <>
-              <Button
-                variant="ghost"
-                onClick={handleRestore}
-                disabled={isPageLoading}
-                className="mb-4"
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Restore Purchases
-              </Button>
-              <p className="mb-2">
-                Payment will be charged to your Apple ID account at confirmation of purchase.
-              </p>
-              <p className="mb-2">
-                Subscription automatically renews unless auto-renew is turned off at least 24-hours before the end of the current period.
-              </p>
-              <p className="mb-4">
-                Manage subscriptions in iOS Settings → your name → Subscriptions.
-              </p>
-              <div className="flex justify-center gap-4 mt-4">
-                <Link to="/terms" className="text-primary hover:underline">
-                  Terms of Use
-                </Link>
-                <span>•</span>
-                <Link to="/privacy" className="text-primary hover:underline">
-                  Privacy Policy
-                </Link>
-              </div>
-            </>
-          ) : (
-            <>
-              <p>All plans include a 7-day free trial. Cancel anytime.</p>
-              <p className="mt-2">
-                Cancel from your{' '}
-                <Link to="/settings" className="text-primary hover:underline">
-                  account settings
-                </Link>
-                .
-              </p>
-              <div className="flex justify-center gap-4 mt-4">
-                <Link to="/terms" className="text-primary hover:underline">
-                  Terms
-                </Link>
-                <span>•</span>
-                <Link to="/privacy" className="text-primary hover:underline">
-                  Privacy
-                </Link>
-              </div>
-            </>
-          )}
+          <p>All plans include a 7-day free trial. Cancel anytime.</p>
+          <p className="mt-2">
+            Cancel from your{' '}
+            <Link to="/settings" className="text-primary hover:underline">
+              account settings
+            </Link>
+            .
+          </p>
+          <div className="flex justify-center gap-4 mt-4">
+            <Link to="/terms" className="text-primary hover:underline">
+              Terms
+            </Link>
+            <span>•</span>
+            <Link to="/privacy" className="text-primary hover:underline">
+              Privacy
+            </Link>
+          </div>
         </div>
       </div>
     </div>
