@@ -129,6 +129,11 @@ export const restorePurchases = async () => {
 export const getCustomerInfo = async () => {
   if (!Capacitor.isNativePlatform()) return null;
   
+  if (!isInitialized) {
+    console.warn('[RevenueCat] getCustomerInfo: SDK not initialized yet');
+    return null;
+  }
+  
   try {
     const result = await Purchases.getCustomerInfo();
     return result.customerInfo;
