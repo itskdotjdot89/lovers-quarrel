@@ -1,74 +1,102 @@
 
+# Fix RevenueCat "Purchases must be configured" Error on iOS
 
-## Fix: RevenueCat "Invalid API" Error in Local Xcode Simulator
+## Problem Identified
 
-### Problem Identified
-The RevenueCat API key (`VITE_REVENUECAT_API_KEY`) is stored in Lovable secrets, but this is **not accessible when building locally**. When you run `npm run build` on your machine, Vite looks for environment variables in a local `.env` file, which doesn't exist with the key.
+The Xcode console shows repeated errors: `Purchases must be configured before calling this function`. This happens because:
 
-### Solution
-You need to create a local `.env` file on your machine with the RevenueCat API key so that Vite can embed it during the local build process.
+1. **Missing initialization check**: The `getCustomerInfo()` and `checkEntitlement()` functions call RevenueCat methods without first checking if the SDK has been initialized
+2. **Race condition**: `SubscriptionContext` and `useRevenueCat` both try to check subscription status, but RevenueCat may not be configured yet
+3. **Possible missing API key**: The `VITE_REVENUECAT_API_KEY` environment variable might not be embedded in the native build
 
----
+## Solution Overview
 
-## Steps to Fix (On Your Local Machine)
+### Step 1: Add Initialization Check to `getCustomerInfo`
 
-### Step 1: Create a Local .env File
-In your project's root directory (where `package.json` is located), create a file named `.env` with the following content:
+Update `src/lib/revenuecat.ts` to check `isInitialized` before calling `Purchases.getCustomerInfo()`:
 
-```text
-VITE_REVENUECAT_API_KEY=appl_YOUR_ACTUAL_KEY_HERE
+```typescript
+export const getCustomerInfo = async () => {
+  if (!Capacitor.isNativePlatform()) return null;
+  
+  // Add this check to prevent "not configured" error
+  if (!isInitialized) {
+    console.warn('[RevenueCat] getCustomerInfo: SDK not initialized yet');
+    return null;
+  }
+  
+  try {
+    const result = await Purchases.getCustomerInfo();
+    return result.customerInfo;
+  } catch (error) {
+    console.error('[RevenueCat] Error getting customer info:', error);
+    return null;
+  }
+};
 ```
 
-Replace `appl_YOUR_ACTUAL_KEY_HERE` with your actual RevenueCat iOS public API key.
+### Step 2: Update SubscriptionContext to Support Native Platforms
 
-### Step 2: Rebuild and Sync
-Run these commands from your project directory:
+Modify `src/contexts/SubscriptionContext.tsx` to:
+- Detect if running on native platform
+- Use RevenueCat for subscription checks on iOS instead of the edge function
+- Prevent the Stripe edge function from being called on native platforms
 
+```text
+Key changes:
+┌─────────────────────────────────────────────────────────────┐
+│ SubscriptionContext                                         │
+├─────────────────────────────────────────────────────────────┤
+│ • Import Capacitor and RevenueCat functions                 │
+│ • Check isNative before calling edge function               │
+│ • On native: use checkEntitlement() from RevenueCat         │
+│ • On web: use existing Stripe edge function                 │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Step 3: Verify Environment Variable is Embedded
+
+Ensure `.env` file exists at project root with:
+```
+VITE_REVENUECAT_API_KEY=appl_your_actual_key_here
+```
+
+Then rebuild:
 ```bash
 npm run build
 npx cap sync ios
 ```
 
-### Step 3: Clean Xcode Build Folder
-In Xcode:
-1. Go to **Product** -> **Clean Build Folder** (or press `Cmd+Shift+K`)
-2. Run the app again in the simulator
-
----
-
-## Why This Happens
-
-```text
-+------------------+     +------------------+     +------------------+
-|  Lovable Cloud   |     |  Local Machine   |     |  iOS Simulator   |
-|  (has secrets)   |     |  (no secrets)    |     |  (runs app)      |
-+------------------+     +------------------+     +------------------+
-        |                        |                        |
-        |  Build in Lovable:     |                        |
-        |  Key IS embedded       |                        |
-        +----------------------->|                        |
-                                 |                        |
-        |  Build locally:        |                        |
-        |  Key is MISSING        |  No VITE_REVENUECAT_   |
-        |  (no .env file)        |  API_KEY = "Invalid API"|
-        +------------------------+----------------------->|
-```
-
-- **Lovable Cloud builds** have access to secrets you configure in the Lovable UI
-- **Local builds** (npm run build on your machine) use a local `.env` file
-- Without the local `.env` file, the API key is `undefined`, causing the "Invalid API" error
-
----
-
-## Security Note
-The `.env` file should already be in your `.gitignore` (it is by default). This means:
-- Your API key won't be committed to GitHub
-- Each developer needs their own local `.env` file
-- This is the standard secure practice for environment variables
-
----
-
 ## Technical Details
 
-No code changes are required. The current implementation in `src/lib/revenuecat.ts` correctly reads from `import.meta.env.VITE_REVENUECAT_API_KEY`, which works with both Lovable secrets (cloud) and local `.env` files.
+### Files to Modify
 
+| File | Change |
+|------|--------|
+| `src/lib/revenuecat.ts` | Add `isInitialized` check to `getCustomerInfo()` |
+| `src/contexts/SubscriptionContext.tsx` | Add native platform detection, use RevenueCat on iOS |
+
+### Why This Fixes the Issue
+
+1. **Prevents premature SDK calls**: Adding initialization checks stops the "not configured" error
+2. **Correct subscription flow on iOS**: Uses RevenueCat entitlements instead of Stripe edge function
+3. **Eliminates repeated errors**: Gracefully handles uninitialized state
+
+## After Implementation
+
+Rebuild and test:
+```bash
+npm run build
+npx cap sync ios
+```
+
+In Xcode:
+1. Clean Build Folder (`Cmd+Shift+K`)
+2. Run (`Cmd+R`)
+
+You should see in the console:
+- `[RevenueCat] API Key present: true`
+- `[RevenueCat] Initialized successfully`
+- `[RevenueCat] Offerings loaded: true`
+
+And the pricing page should display the correct price from RevenueCat.
