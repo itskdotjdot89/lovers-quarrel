@@ -27,7 +27,23 @@ const Pricing = () => {
   const fromOnboarding = searchParams.get('from') === 'onboarding';
   
   const { checkSubscription } = useSubscription();
-  const { isNative, isReady, purchase, restore, loading: rcLoading } = useRevenueCat();
+  const { isNative, isReady, offerings, purchase, restore, loading: rcLoading } = useRevenueCat();
+
+  // Get price from RevenueCat offerings on native
+  const getDisplayPrice = () => {
+    if (isNative && offerings?.availablePackages?.length > 0) {
+      const monthlyPkg = offerings.availablePackages.find(
+        (pkg: any) => pkg.identifier === '$rc_monthly' || pkg.identifier === 'lq_premium_monthly'
+      ) || offerings.availablePackages[0];
+      
+      if (monthlyPkg?.product?.priceString) {
+        return monthlyPkg.product.priceString;
+      }
+    }
+    return '$4.99';
+  };
+
+  const displayPrice = getDisplayPrice();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -172,7 +188,7 @@ const Pricing = () => {
               
               <div className="mt-4">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold">$4.99</span>
+                  <span className="text-4xl font-bold">{displayPrice}</span>
                   <span className="text-muted-foreground">/month</span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
