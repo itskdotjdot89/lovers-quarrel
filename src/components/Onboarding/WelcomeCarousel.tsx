@@ -98,7 +98,7 @@ const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
       </div>
       
       <div 
-        className="relative w-full max-w-md"
+        className="relative w-full max-w-md pb-16"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -176,14 +176,15 @@ const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
           </div>
         </div>
         
-        {/* Skip button */}
+        {/* Skip button - now properly positioned within padded container */}
         {currentScreen < screens.length - 1 && (
-          <button
+          <Button
+            variant="ghost"
             onClick={onComplete}
-            className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Skip intro
-          </button>
+          </Button>
         )}
       </div>
     </div>
