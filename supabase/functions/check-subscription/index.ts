@@ -64,13 +64,13 @@ serve(async (req) => {
     
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Whitelist for users with indefinite premium access
+    // Whitelist for users with indefinite premium access (owners only)
     const premiumWhitelist = [
       "dmpaige92@gmail.com", 
       "samuelkennethjohnsonjr@gmail.com",
       "samuelkennethjonsonjr@gmail.com",
       "dmpaige93@gmail.com"
-      // "demo@loversquarrel.com" // Apple review test account - TEMPORARILY DISABLED FOR TESTING
+      // Note: demo@loversquarrel.com is NOT whitelisted - Apple reviewers must test IAP flow
     ];
     
     if (premiumWhitelist.includes(user.email.toLowerCase())) {
