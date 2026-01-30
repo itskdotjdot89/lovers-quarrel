@@ -1,117 +1,110 @@
 
 
-# Keep Custom Pricing UI with RevenueCat Purchase Flow
+# Apple Review IAP Testing - No Code Changes Needed
 
-## What You Want
-
-Keep your beautiful custom `/pricing` page design, but when the user taps "Start 7-Day Free Trial" on iOS, it triggers RevenueCat's native App Store purchase sheet directly (not RevenueCat's paywall UI).
-
-## How It Works
+## Current Architecture (iOS)
 
 ```text
-User taps "Start 7-Day Free Trial"
+User logs in (demo@loversquarrel.com)
               │
               ▼
-      ┌───────────────┐
-      │  Is iOS/Native?│
-      └───────┬───────┘
-              │
-      ┌───────┴───────┐
-     YES              NO
-      │               │
-      ▼               ▼
-┌─────────────┐  ┌─────────────────┐
-│ RevenueCat  │  │ Stripe Checkout │
-│ purchase()  │  │ (existing flow) │
-│             │  │                 │
-│ Shows native│  │                 │
-│ App Store   │  │                 │
-│ sheet only  │  │                 │
-└──────┬──────┘  └─────────────────┘
-       │
-       ▼
-┌─────────────────────────┐
-│ Apple's native purchase │
-│ confirmation sheet      │
-│ (Touch ID / Face ID)    │
-└─────────────────────────┘
+      ┌───────────────────────┐
+      │ SubscriptionContext   │
+      │ checks: isNative?     │
+      └───────────┬───────────┘
+                  │
+                 YES (iOS)
+                  │
+                  ▼
+      ┌───────────────────────┐
+      │ RevenueCat SDK        │
+      │ checkEntitlement()    │
+      │                       │
+      │ Returns: false        │
+      │ (no purchase yet)     │
+      └───────────┬───────────┘
+                  │
+                  ▼
+      ┌───────────────────────┐
+      │ User sees Pricing.tsx │
+      │ with "Start Trial"    │
+      └───────────┬───────────┘
+                  │
+       User taps Subscribe
+                  │
+                  ▼
+      ┌───────────────────────┐
+      │ purchase(offerings[0])│
+      │                       │
+      │ Native Apple sheet    │
+      │ (Sandbox during       │
+      │  App Review)          │
+      └───────────┬───────────┘
+                  │
+      Completes sandbox purchase
+                  │
+                  ▼
+      ┌───────────────────────┐
+      │ RevenueCat grants     │
+      │ entitlement           │
+      │                       │
+      │ isPremium = true      │
+      └───────────────────────┘
 ```
 
-## Implementation
+## Why No Code Changes Are Needed
 
-### File: `src/pages/Pricing.tsx`
+The `check-subscription` edge function whitelist is **only used on web** (Stripe flow). On iOS:
 
-**Current behavior (lines 100-139):**
-The `handleSubscribe` function currently calls `showPaywall()` first, which opens RevenueCat's full native paywall UI.
+| Platform | Subscription Check | Whitelist Used? |
+|----------|-------------------|-----------------|
+| Web | Stripe edge function | Yes |
+| iOS | RevenueCat SDK | No |
 
-**New behavior:**
-Change `handleSubscribe` to call `purchase(offerings[0])` directly on iOS, which:
-- Keeps your custom React pricing UI visible
-- Only triggers Apple's native purchase confirmation sheet
-- Handles the purchase result and navigates accordingly
+Since Apple reviewers test on iOS, they will:
+1. See the pricing page (RevenueCat returns `isPremium: false`)
+2. Tap "Start 7-Day Free Trial"
+3. See Apple's native purchase sheet in **Sandbox mode**
+4. Complete the sandbox purchase (no real charge)
+5. RevenueCat grants the entitlement
+6. Access all premium features
 
-### Code Change
+## App Store Connect Setup Required
 
-Replace the iOS handling in `handleSubscribe` to skip the paywall and purchase directly:
+For Apple reviewers to test IAP, ensure these are configured:
 
-```typescript
-const handleSubscribe = async () => {
-  if (!user) {
-    navigate('/auth');
-    return;
-  }
+### 1. Sandbox Test Account (App Store Connect)
+- Go to **Users and Access** → **Sandbox** → **Testers**
+- Create or verify a sandbox tester account exists
+- Apple reviewers use their own sandbox accounts, but having one ensures the flow works
 
-  setLoading(true);
+### 2. Demo Account Credentials (App Review Information)
+Provide in App Store Connect under **App Review Information**:
+- **Demo Account:** demo@loversquarrel.com
+- **Password:** AppleReview2025!
 
-  try {
-    // On native iOS, use RevenueCat direct purchase
-    if (isNative) {
-      if (offerings.length > 0) {
-        const success = await purchase(offerings[0]);
-        if (success) {
-          await checkSubscription();
-          toast({
-            title: 'Welcome to Premium!',
-            description: 'Your subscription is now active.'
-          });
-          navigate('/home');
-        }
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'No subscription options available. Please try again.'
-        });
-      }
-      return;
-    }
+### 3. Review Notes
+Add this note in App Store Connect:
 
-    // On web, use Stripe (unchanged)
-    // ... existing Stripe code
-  } catch (error) {
-    // ... existing error handling
-  } finally {
-    setLoading(false);
-  }
-};
+```
+To test the subscription:
+1. Sign in with the demo account provided
+2. Navigate to Settings → Subscription (or tap any locked feature)
+3. Tap "Start 7-Day Free Trial" 
+4. Complete the purchase using your sandbox Apple ID
+5. The subscription will activate immediately
+
+Note: This app uses RevenueCat for subscription management with Apple In-App Purchase.
 ```
 
-### Also Remove Unused Function
+## Summary
 
-The `handleShowPaywall` function (lines 64-98) can be removed since it's no longer needed - it was calling RevenueCat's native paywall which we're bypassing.
+| Item | Status |
+|------|--------|
+| IAP flow via RevenueCat | ✅ Already working |
+| Demo account can see pricing | ✅ Yes (RevenueCat returns not subscribed) |
+| Demo account can test purchase | ✅ Yes (sandbox purchase flow) |
+| Whitelist change needed | ❌ Not needed for iOS |
 
-## User Experience After Change
-
-1. User sees your custom `/pricing` page design
-2. User taps "Start 7-Day Free Trial"
-3. Apple's native purchase sheet slides up (Face ID/Touch ID confirmation)
-4. After successful purchase, navigates to `/home` with success toast
-
-## Summary of Changes
-
-| Change | Description |
-|--------|-------------|
-| Modify `handleSubscribe` | Use `purchase(offerings[0])` directly instead of `showPaywall()` |
-| Remove `handleShowPaywall` | No longer needed since we're not using RevenueCat's paywall UI |
-| Add error handling | Show toast if no offerings are available |
+**No code changes required** - the current implementation correctly allows Apple reviewers to test the full IAP purchase flow on iOS.
 
