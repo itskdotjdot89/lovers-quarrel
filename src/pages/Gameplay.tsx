@@ -7,11 +7,13 @@ import AIAnalysisDialog from '@/components/AIAnalysisDialog';
 import MultiplayerResponseInput from '@/components/MultiplayerResponseInput';
 import OpenEndedInput from '@/components/OpenEndedInput';
 import PartnerResponses from '@/components/PartnerResponses';
+import PaywallOverlay from '@/components/PaywallOverlay';
 import { Card as CardType } from '@/types/game';
 import { loadFavorites, saveFavorites, toggleFavorite, shuffleCards } from '@/lib/gameLogic';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { usePresence } from '@/hooks/usePresence';
+import { useFreemiumLimit } from '@/hooks/useFreemiumLimit';
 
 const Gameplay = () => {
   const navigate = useNavigate();
@@ -34,6 +36,7 @@ const Gameplay = () => {
   const [pendingChoice, setPendingChoice] = useState<{ choice: string; responseText: string; cardSubtype: string } | null>(null);
   const [isFlipping, setIsFlipping] = useState(false);
   const [sayItResponse, setSayItResponse] = useState('');
+  const { shouldShowPaywall, recordCardView, cardsViewed, freeCardsRemaining, FREE_CARD_LIMIT } = useFreemiumLimit();
 
   const analyzeChoice = async (responseText: string) => {
     if (!currentCard) return;
@@ -237,6 +240,15 @@ const Gameplay = () => {
   };
 
   const handleNext = async () => {
+    // Check freemium limit before advancing (solo mode only)
+    if (!sessionId) {
+      const canProceed = recordCardView();
+      if (!canProceed) {
+        // Paywall will be shown via shouldShowPaywall state
+        return;
+      }
+    }
+
     if (sessionId) {
       if (!isHost) {
         toast.error('Only host can advance');
@@ -323,13 +335,24 @@ const Gameplay = () => {
             </div>
           )}
           
-          {/* Card counter */}
-          <div className="glass px-4 py-2 rounded-full border border-border/50">
-            <span className="text-sm font-mono text-muted-foreground">
-              <span className="text-foreground font-semibold">{currentIndex + 1}</span>
-              <span className="mx-1">/</span>
-              <span>{totalCards}</span>
-            </span>
+          {/* Card counter with free cards indicator */}
+          <div className="flex items-center gap-2">
+            {/* Free cards remaining indicator (solo mode, non-premium only) */}
+            {!sessionId && freeCardsRemaining > 0 && freeCardsRemaining <= FREE_CARD_LIMIT && (
+              <div className="glass px-3 py-2 rounded-full border border-primary/30 bg-primary/5">
+                <span className="text-xs font-medium text-primary">
+                  {freeCardsRemaining} free left
+                </span>
+              </div>
+            )}
+            
+            <div className="glass px-4 py-2 rounded-full border border-border/50">
+              <span className="text-sm font-mono text-muted-foreground">
+                <span className="text-foreground font-semibold">{currentIndex + 1}</span>
+                <span className="mx-1">/</span>
+                <span>{totalCards}</span>
+              </span>
+            </div>
           </div>
         </div>
         
@@ -493,6 +516,11 @@ const Gameplay = () => {
         sentiment={currentAnalysis?.sentiment}
         keyThemes={currentAnalysis?.themes}
       />
+      
+      {/* Paywall overlay for free users who've hit the limit */}
+      {shouldShowPaywall && (
+        <PaywallOverlay cardsViewed={cardsViewed} />
+      )}
     </div>
   );
 };
