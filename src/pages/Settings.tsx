@@ -128,12 +128,12 @@ const Settings = () => {
         </div>
 
         <div className="space-y-4">
-          {/* Account Management - Moved up for better visibility per Apple guidelines */}
-          {isLoggedIn && (
-            <Card className="p-6 bg-card border-2 border-destructive/30">
-              <h2 className="font-display text-lg mb-3 text-foreground">
-                Account Management
-              </h2>
+          {/* Account Management - Always visible per Apple Guideline 5.1.1(v) */}
+          <Card className="p-6 bg-card border-2 border-destructive/30">
+            <h2 className="font-display text-lg mb-3 text-foreground">
+              Account Management
+            </h2>
+            {isLoggedIn ? (
               <div className="space-y-2">
                 <Button
                   onClick={handleSignOut}
@@ -178,8 +178,20 @@ const Settings = () => {
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
-            </Card>
-          )}
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Sign in to manage your account or delete your data.
+                </p>
+                <Button
+                  onClick={() => navigate('/auth')}
+                  className="w-full"
+                >
+                  Sign In
+                </Button>
+              </div>
+            )}
+          </Card>
 
           {/* Subscription Management */}
           {isLoggedIn && (
@@ -206,7 +218,7 @@ const Settings = () => {
               <div className="flex flex-col gap-2">
                 {subscribed ? (
                   <Button
-                    onClick={() => navigate('/subscription')}
+                    onClick={() => navigate('/pricing')}
                     variant="outline"
                     className="w-full"
                   >
