@@ -345,7 +345,7 @@ const Pricing = () => {
               subscriptions by going to your account settings on the App Store after purchase.
             </p>
           )}
-          <p>All plans include a 7-day free trial. Cancel anytime.</p>
+          <p>Payment will be charged to your Apple ID account at confirmation of purchase. Subscription automatically renews unless canceled at least 24 hours before the end of the current period. Your account will be charged for renewal within 24 hours prior to the end of the current period. You can manage or cancel your subscription in your Apple ID account settings.</p>
           <div className="flex justify-center gap-4 mt-4">
             <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
               Terms of Use
