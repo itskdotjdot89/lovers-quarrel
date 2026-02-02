@@ -230,7 +230,7 @@ const Pricing = () => {
             </div>
             
             <div className="flex justify-center gap-4 mt-8 text-sm">
-              <Link to="/terms" className="text-primary hover:underline">Terms</Link>
+              <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Terms</a>
               <span className="text-muted-foreground">•</span>
               <Link to="/privacy" className="text-primary hover:underline">Privacy</Link>
             </div>
@@ -347,9 +347,9 @@ const Pricing = () => {
           )}
           <p>All plans include a 7-day free trial. Cancel anytime.</p>
           <div className="flex justify-center gap-4 mt-4">
-            <Link to="/terms" className="text-primary hover:underline">
+            <a href="https://www.apple.com/legal/internet-services/itunes/dev/stdeula/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
               Terms of Use
-            </Link>
+            </a>
             <span>•</span>
             <Link to="/privacy" className="text-primary hover:underline">
               Privacy Policy
