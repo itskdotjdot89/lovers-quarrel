@@ -280,23 +280,23 @@ const Pricing = () => {
               <div className="mt-4">
                 <div className="flex items-baseline gap-1">
                   {isPageLoading ? (
-                    <Skeleton className="h-10 w-24" />
+                    <Skeleton className="h-12 w-32" />
                   ) : (
                     <>
-                      <span className="text-4xl font-bold">{displayPrice}</span>
-                      <span className="text-muted-foreground">/month</span>
+                      <span className="text-5xl font-bold text-foreground">{displayPrice}</span>
+                      <span className="text-lg text-foreground/80">/month</span>
                     </>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  7-day free trial included
+                <p className="text-xs text-muted-foreground/70 mt-2">
+                  Includes 7-day free trial
                 </p>
               </div>
             </CardHeader>
 
             <CardContent className="space-y-4">
               <Button
-                className="w-full"
+                className="w-full text-base py-6"
                 onClick={handleSubscribe}
                 disabled={loading || isPageLoading}
               >
@@ -306,7 +306,7 @@ const Pricing = () => {
                     Loading...
                   </>
                 ) : (
-                  fromOnboarding ? 'Start Free Trial & Play' : 'Start 7-Day Free Trial'
+                  `Subscribe for ${displayPrice}/month`
                 )}
               </Button>
 
@@ -338,14 +338,14 @@ const Pricing = () => {
         <div className="text-center mt-8 text-xs text-muted-foreground max-w-md mx-auto space-y-3">
           {isNative && (
             <p className="text-[10px] leading-relaxed">
-              Payment will be charged to your Apple ID account at the confirmation of purchase. 
+              {displayPrice}/month after 7-day free trial. Payment will be charged to your Apple ID account at the confirmation of purchase. 
               Subscription automatically renews unless it is canceled at least 24 hours before 
               the end of the current period. Your account will be charged for renewal within 
               24 hours prior to the end of the current period. You can manage and cancel your 
               subscriptions by going to your account settings on the App Store after purchase.
             </p>
           )}
-          <p>All plans include a 7-day free trial. Cancel anytime.</p>
+          <p className="text-[11px]">{displayPrice}/month after free trial. Cancel anytime.</p>
           <div className="flex justify-center gap-4 mt-4">
             <Link to="/terms" className="text-primary hover:underline">
               Terms of Use
