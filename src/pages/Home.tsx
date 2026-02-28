@@ -1,7 +1,7 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Play, Settings, Heart, Sparkles, LogIn, User, Check, ChevronRight } from 'lucide-react';
+import { Play, Settings, Heart, Sparkles, LogIn, User, Check, ChevronRight, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -93,31 +93,38 @@ const Home = () => {
           </button>
 
           {/* Secondary actions */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => navigate('/favorites')}
-              className="group p-6 glass rounded-xl border border-border/50 hover:border-crimson-vivid/50 transition-all duration-300 hover-lift text-left"
+              className="group p-5 glass rounded-xl border border-border/50 hover:border-crimson-vivid/50 transition-all duration-300 hover-lift text-left"
             >
-              <div className="w-12 h-12 rounded-xl bg-crimson-vivid/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Heart className="w-6 h-6 text-crimson-glow" />
+              <div className="w-10 h-10 rounded-xl bg-crimson-vivid/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Heart className="w-5 h-5 text-crimson-glow" />
               </div>
-              <h3 className="font-display text-xl text-foreground mb-1">Favorites</h3>
-              <p className="text-sm text-muted-foreground">
-                Your saved cards
-              </p>
+              <h3 className="font-display text-lg text-foreground mb-0.5">Favorites</h3>
+              <p className="text-xs text-muted-foreground">Saved cards</p>
+            </button>
+
+            <button
+              onClick={() => navigate('/friends')}
+              className="group p-5 glass rounded-xl border border-border/50 hover:border-crimson-vivid/50 transition-all duration-300 hover-lift text-left"
+            >
+              <div className="w-10 h-10 rounded-xl bg-crimson-vivid/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Users className="w-5 h-5 text-crimson-glow" />
+              </div>
+              <h3 className="font-display text-lg text-foreground mb-0.5">Friends</h3>
+              <p className="text-xs text-muted-foreground">Your circle</p>
             </button>
 
             <button
               onClick={() => navigate('/settings')}
-              className="group p-6 glass rounded-xl border border-border/50 hover:border-muted-foreground/50 transition-all duration-300 hover-lift text-left"
+              className="group p-5 glass rounded-xl border border-border/50 hover:border-muted-foreground/50 transition-all duration-300 hover-lift text-left"
             >
-              <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Settings className="w-6 h-6 text-muted-foreground" />
+              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <Settings className="w-5 h-5 text-muted-foreground" />
               </div>
-              <h3 className="font-display text-xl text-foreground mb-1">Settings</h3>
-              <p className="text-sm text-muted-foreground">
-                Preferences
-              </p>
+              <h3 className="font-display text-lg text-foreground mb-0.5">Settings</h3>
+              <p className="text-xs text-muted-foreground">Preferences</p>
             </button>
           </div>
 

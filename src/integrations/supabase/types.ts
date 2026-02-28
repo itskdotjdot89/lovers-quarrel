@@ -118,6 +118,54 @@ export type Database = {
         }
         Relationships: []
       }
+      friend_links: {
+        Row: {
+          created_at: string
+          friend_display_name: string | null
+          friend_email: string | null
+          friend_user_id: string | null
+          id: string
+          owner_user_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          friend_display_name?: string | null
+          friend_email?: string | null
+          friend_user_id?: string | null
+          id?: string
+          owner_user_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          friend_display_name?: string | null
+          friend_email?: string | null
+          friend_user_id?: string | null
+          id?: string
+          owner_user_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friend_links_friend_user_id_fkey"
+            columns: ["friend_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_links_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_sessions: {
         Row: {
           created_at: string

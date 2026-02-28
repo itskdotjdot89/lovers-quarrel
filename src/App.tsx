@@ -18,6 +18,7 @@ import Onboarding from "./pages/Onboarding";
 import Support from "./pages/Support";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import Friends from "./pages/Friends";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/play" element={<Gameplay />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/friends" element={<Friends />} />
             <Route path="/support" element={<Support />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
