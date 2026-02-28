@@ -47,7 +47,7 @@ const WaitingRoom = ({ sessionCode, sessionId, isHost, onStart, onCancel }: Wait
         (payload) => {
           // When session status changes to 'active', navigate to gameplay
           if (payload.new.status === 'active') {
-            window.location.href = `/gameplay?session=${sessionId}`;
+            window.location.href = `/play?session=${sessionId}`;
           }
         }
       )
