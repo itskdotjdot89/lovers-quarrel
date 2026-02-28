@@ -4,11 +4,10 @@ const config: CapacitorConfig = {
   appId: 'com.AcpcZnwlYJHI.LoversQuarrel',
   appName: 'lovers-whispers-app',
   webDir: 'dist',
-  // NOTE: For development with hot-reload, uncomment the server block below
-  // server: {
-  //   url: 'https://aa5df12e-6f1d-4cd8-afe3-94eb0e114b01.lovableproject.com?forceHideBadge=true',
-  //   cleartext: true
-  // },
+  server: {
+    url: 'https://aa5df12e-6f1d-4cd8-afe3-94eb0e114b01.lovableproject.com?forceHideBadge=true',
+    cleartext: true
+  },
   ios: {
     contentInset: 'automatic'
   },
