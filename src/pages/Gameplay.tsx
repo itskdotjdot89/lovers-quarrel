@@ -84,7 +84,8 @@ const Gameplay = () => {
   useEffect(() => {
     if (sessionId) {
       loadMultiplayerSession();
-      subscribeToSession();
+      const cleanup = subscribeToSession();
+      return () => { cleanup?.(); };
     } else {
       loadSoloSession();
     }
@@ -228,13 +229,27 @@ const Gameplay = () => {
         schema: 'public', 
         table: 'game_sessions', 
         filter: `id=eq.${sessionId}` 
-      }, () => loadMultiplayerSession())
+      }, (payload) => {
+        // Only update the card index instead of full reload
+        const newIndex = payload.new.current_card_index;
+        setCurrentIndex(newIndex);
+        if (cards.length > 0 && cards[newIndex]) {
+          setCurrentCard(cards[newIndex]);
+        }
+      })
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
         table: 'session_responses', 
         filter: `session_id=eq.${sessionId}` 
-      }, () => loadResponses())
+      }, (payload) => {
+        // Add response directly to state instead of refetching
+        setResponses(prev => {
+          // Deduplicate
+          if (prev.some(r => r.id === payload.new.id)) return prev;
+          return [...prev, payload.new];
+        });
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   };

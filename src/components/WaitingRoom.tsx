@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Copy, Check, Users, Loader2 } from 'lucide-react';
@@ -17,6 +18,7 @@ const WaitingRoom = ({ sessionCode, sessionId, isHost, onStart, onCancel }: Wait
   const [participants, setParticipants] = useState<any[]>([]);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadParticipants();
@@ -47,7 +49,7 @@ const WaitingRoom = ({ sessionCode, sessionId, isHost, onStart, onCancel }: Wait
         (payload) => {
           // When session status changes to 'active', navigate to gameplay
           if (payload.new.status === 'active') {
-            window.location.href = `/play?session=${sessionId}`;
+            navigate(`/play?session=${sessionId}`);
           }
         }
       )
