@@ -578,7 +578,7 @@ const Gameplay = () => {
       
       {/* Paywall overlay for free users who've hit the limit */}
       {shouldShowPaywall && (
-        <PaywallOverlay cardsViewed={cardsViewed} />
+        <PaywallOverlay cardsViewed={cardsViewed} onClose={() => navigate('/decks')} />
       )}
     </div>
   );
