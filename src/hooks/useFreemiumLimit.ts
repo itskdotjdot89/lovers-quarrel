@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 
-const FREE_CARD_LIMIT = 7; // Number of cards free users can view before paywall
+const FREE_CARD_LIMIT = 20; // Number of cards free users can view before paywall
 const STORAGE_KEY = 'lq_cards_viewed';
 
 interface FreemiumLimitResult {
