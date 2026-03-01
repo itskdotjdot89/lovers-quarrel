@@ -86,7 +86,32 @@ const Gameplay = () => {
     if (sessionId) {
       loadMultiplayerSession();
       const cleanup = subscribeToSession();
-      return () => { cleanup?.(); };
+
+      // Fallback polling: sync card index every 3s in case realtime misses an event
+      const pollInterval = setInterval(async () => {
+        const { data } = await supabase
+          .from('game_sessions')
+          .select('current_card_index')
+          .eq('id', sessionId)
+          .single();
+        if (data) {
+          setCurrentIndex(prev => {
+            if (data.current_card_index !== prev) {
+              const latestCards = cardsRef.current;
+              if (latestCards[data.current_card_index]) {
+                setCurrentCard(latestCards[data.current_card_index]);
+              }
+              return data.current_card_index;
+            }
+            return prev;
+          });
+        }
+      }, 3000);
+
+      return () => {
+        cleanup?.();
+        clearInterval(pollInterval);
+      };
     } else {
       loadSoloSession();
     }
@@ -235,6 +260,7 @@ const Gameplay = () => {
       }, (payload) => {
         const newIndex = payload.new.current_card_index;
         setCurrentIndex(newIndex);
+        setResponses([]); // Clear old card responses immediately
         // Use cardsRef to always read the latest cards array
         const latestCards = cardsRef.current;
         if (latestCards.length > 0 && latestCards[newIndex]) {
