@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { shuffleCards } from '@/lib/gameLogic';
+import { recordSessionAndCheckPrompt, requestAppReview } from '@/lib/appReview';
 
 const DeckSelection = () => {
   const navigate = useNavigate();
@@ -51,9 +52,15 @@ const DeckSelection = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   };
 
-  const handleModeSelect = (mode: 'solo' | 'couples') => {
+  const handleModeSelect = async (mode: 'solo' | 'couples') => {
     setSessionMode(mode);
     setSetupStep('decks');
+
+    // Check if we should prompt for a review every 3 mode selections
+    const shouldPrompt = recordSessionAndCheckPrompt();
+    if (shouldPrompt) {
+      await requestAppReview();
+    }
   };
 
   const handleCreateSession = async () => {
