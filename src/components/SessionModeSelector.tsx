@@ -2,7 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Users, User } from 'lucide-react';
 
 interface SessionModeSelectorProps {
-  onSelect: (mode: 'solo' | 'couples') => void;
+  onSelect: (mode: 'solo' | 'couples' | 'couples_local') => void;
 }
 
 const SessionModeSelector = ({ onSelect }: SessionModeSelectorProps) => {
@@ -27,6 +27,21 @@ const SessionModeSelector = ({ onSelect }: SessionModeSelectorProps) => {
 
       <Card 
         className="p-6 cursor-pointer hover:border-primary transition-all hover:shadow-lg"
+        onClick={() => onSelect('couples_local')}
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <Users className="w-6 h-6 text-primary" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-lg">Couples (One Device)</h3>
+            <p className="text-sm text-muted-foreground">Play together in person, sharing one device</p>
+          </div>
+        </div>
+      </Card>
+
+      <Card 
+        className="p-6 cursor-pointer hover:border-primary transition-all hover:shadow-lg"
         onClick={() => onSelect('couples')}
       >
         <div className="flex items-center gap-4">
@@ -34,7 +49,7 @@ const SessionModeSelector = ({ onSelect }: SessionModeSelectorProps) => {
             <Users className="w-6 h-6 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-lg">Couples Mode</h3>
+            <h3 className="font-semibold text-lg">Couples (Two Devices)</h3>
             <p className="text-sm text-muted-foreground">Play together in real-time on separate devices</p>
           </div>
         </div>

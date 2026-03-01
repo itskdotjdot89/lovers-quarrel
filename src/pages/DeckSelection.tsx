@@ -22,7 +22,7 @@ const DeckSelection = () => {
   const [selectedDecks, setSelectedDecks] = useState<DeckMood[]>(['freaky']);
   const [intensity, setIntensity] = useState<SpiceLevel>('standard');
   const [showTooltips, setShowTooltips] = useState(false);
-  const [sessionMode, setSessionMode] = useState<'solo' | 'couples' | null>(null);
+  const [sessionMode, setSessionMode] = useState<'solo' | 'couples' | 'couples_local' | null>(null);
   const [setupStep, setSetupStep] = useState<'mode' | 'setup' | 'waiting' | 'decks'>('mode');
   const [sessionData, setSessionData] = useState<{
     id: string;
@@ -52,7 +52,7 @@ const DeckSelection = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   };
 
-  const handleModeSelect = async (mode: 'solo' | 'couples') => {
+  const handleModeSelect = async (mode: 'solo' | 'couples' | 'couples_local') => {
     setSessionMode(mode);
     setSetupStep('decks');
 
@@ -274,7 +274,7 @@ const DeckSelection = () => {
     localStorage.setItem('lq_session_config', JSON.stringify({
       deckIds: selectedDecks,
       intensity,
-      mode: 'date_night',
+      mode: sessionMode === 'couples_local' ? 'couples_local' : 'date_night',
     }));
     
     navigate('/play');
@@ -327,7 +327,7 @@ const DeckSelection = () => {
           <Button
             variant="ghost"
             onClick={() => {
-              if (sessionMode === 'couples') {
+              if (sessionMode === 'couples' || sessionMode === 'couples_local') {
                 setSetupStep('mode');
               } else {
                 navigate('/');
