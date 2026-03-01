@@ -80,11 +80,38 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      // On native platforms, use RevenueCat
+      // Always check backend first (handles whitelist + Stripe)
+      console.log('[SubscriptionContext] Checking via edge function first');
+      
+      let backendSubscribed = false;
+      try {
+        const data = await retryWithBackoff(async () => {
+          const response = await supabase.functions.invoke('check-subscription');
+          if (response.error) {
+            throw new Error(response.error.message || 'Failed to check subscription');
+          }
+          return response.data;
+        });
+
+        if (data?.subscribed) {
+          console.log('[SubscriptionContext] Subscribed via backend (whitelist/Stripe)');
+          setSubscriptionStatus({
+            subscribed: true,
+            product_id: data.product_id || null,
+            subscription_end: data.subscription_end || null,
+            status: data.status,
+            loading: false
+          });
+          checkInProgress.current = false;
+          return;
+        }
+      } catch (backendError) {
+        console.warn('[SubscriptionContext] Backend check failed, continuing...', backendError);
+      }
+
+      // If not subscribed via backend AND on native, check RevenueCat
       if (isNative) {
-        console.log('[SubscriptionContext] Checking via RevenueCat');
-        
-        // Initialize RevenueCat if not already
+        console.log('[SubscriptionContext] Not subscribed via backend, checking RevenueCat');
         const initialized = await initializeRevenueCat(currentUser.id);
         
         if (initialized) {
@@ -102,22 +129,11 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // On web, use Stripe edge function with retry
-      console.log('[SubscriptionContext] Checking via Stripe edge function');
-      
-      const data = await retryWithBackoff(async () => {
-        const response = await supabase.functions.invoke('check-subscription');
-        if (response.error) {
-          throw new Error(response.error.message || 'Failed to check subscription');
-        }
-        return response.data;
-      });
-
+      // Not subscribed on any platform
       setSubscriptionStatus({
-        subscribed: data?.subscribed || false,
-        product_id: data?.product_id || null,
-        subscription_end: data?.subscription_end || null,
-        status: data?.status,
+        subscribed: false,
+        product_id: null,
+        subscription_end: null,
         loading: false
       });
     } catch (error) {
