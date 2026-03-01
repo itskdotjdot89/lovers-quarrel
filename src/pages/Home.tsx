@@ -101,8 +101,8 @@ const Home = () => {
               <div className="w-10 h-10 rounded-xl bg-crimson-vivid/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <Heart className="w-5 h-5 text-crimson-glow" />
               </div>
-              <h3 className="font-display text-lg text-foreground mb-0.5">Favorites</h3>
-              <p className="text-xs text-muted-foreground">Saved cards</p>
+              <h3 className="font-display text-base text-foreground mb-0.5 truncate">Favorites</h3>
+              <p className="text-xs text-muted-foreground truncate">Saved cards</p>
             </button>
 
             <button
@@ -112,8 +112,8 @@ const Home = () => {
               <div className="w-10 h-10 rounded-xl bg-crimson-vivid/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <Users className="w-5 h-5 text-crimson-glow" />
               </div>
-              <h3 className="font-display text-lg text-foreground mb-0.5">Friends</h3>
-              <p className="text-xs text-muted-foreground">Your circle</p>
+              <h3 className="font-display text-base text-foreground mb-0.5 truncate">Friends</h3>
+              <p className="text-xs text-muted-foreground truncate">Your circle</p>
             </button>
 
             <button
@@ -123,8 +123,8 @@ const Home = () => {
               <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <Settings className="w-5 h-5 text-muted-foreground" />
               </div>
-              <h3 className="font-display text-lg text-foreground mb-0.5">Settings</h3>
-              <p className="text-xs text-muted-foreground">Preferences</p>
+              <h3 className="font-display text-base text-foreground mb-0.5 truncate">Settings</h3>
+              <p className="text-xs text-muted-foreground truncate">Preferences</p>
             </button>
           </div>
 
