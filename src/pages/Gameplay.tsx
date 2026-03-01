@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Users, Loader2, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowLeft, Users, Loader2, ChevronRight, Sparkles, Mic, Square } from 'lucide-react';
 import GameCard from '@/components/GameCard';
 import AIAnalysisDialog from '@/components/AIAnalysisDialog';
 import MultiplayerResponseInput from '@/components/MultiplayerResponseInput';
@@ -37,6 +37,10 @@ const Gameplay = () => {
   const [pendingChoice, setPendingChoice] = useState<{ choice: string; responseText: string; cardSubtype: string } | null>(null);
   const [isFlipping, setIsFlipping] = useState(false);
   const [sayItResponse, setSayItResponse] = useState('');
+  const [isSayItRecording, setIsSayItRecording] = useState(false);
+  const [isSayItTranscribing, setIsSayItTranscribing] = useState(false);
+  const sayItMediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const sayItChunksRef = useRef<Blob[]>([]);
   const { shouldShowPaywall, recordCardView, cardsViewed, freeCardsRemaining, FREE_CARD_LIMIT } = useFreemiumLimit();
 
   const analyzeChoice = async (responseText: string) => {
@@ -80,6 +84,84 @@ const Gameplay = () => {
   const skipAnalysis = () => {
     setPendingChoice(null);
     setSayItResponse('');
+  };
+
+  const startSayItRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      sayItMediaRecorderRef.current = mediaRecorder;
+      sayItChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          sayItChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(sayItChunksRef.current, { type: 'audio/webm' });
+        stream.getTracks().forEach(track => track.stop());
+        await transcribeSayItAudio(audioBlob);
+      };
+
+      mediaRecorder.start();
+      setIsSayItRecording(true);
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      toast.error('Could not access microphone');
+    }
+  };
+
+  const stopSayItRecording = () => {
+    if (sayItMediaRecorderRef.current && isSayItRecording) {
+      sayItMediaRecorderRef.current.stop();
+      setIsSayItRecording(false);
+    }
+  };
+
+  const transcribeSayItAudio = async (audioBlob: Blob) => {
+    setIsSayItTranscribing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please sign in to use voice input');
+        return;
+      }
+
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+      });
+      reader.readAsDataURL(audioBlob);
+      const base64Audio = await base64Promise;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/transcribe-audio`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ audio: base64Audio }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Transcription failed');
+
+      const { text } = await response.json();
+      setSayItResponse(prev => prev ? `${prev} ${text}` : text);
+      toast.success('Audio transcribed');
+    } catch (error) {
+      console.error('Transcription error:', error);
+      toast.error('Failed to transcribe audio');
+    } finally {
+      setIsSayItTranscribing(false);
+    }
   };
 
   useEffect(() => {
@@ -515,13 +597,35 @@ const Gameplay = () => {
                 {/* Show input box for "Say it" choice */}
                 {pendingChoice.cardSubtype === 'say_sip_strip' && pendingChoice.choice === 'Say it' && (
                   <div className="mb-4">
-                    <textarea
-                      value={sayItResponse}
-                      onChange={(e) => setSayItResponse(e.target.value)}
-                      placeholder="What did you say? Share your response for AI insights..."
-                      className="w-full p-4 rounded-xl border border-border/50 bg-muted/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-crimson-vivid/50 focus:border-crimson-vivid/50 resize-none font-card text-lg transition-all"
-                      rows={3}
-                    />
+                    <div className="relative">
+                      <textarea
+                        value={sayItResponse}
+                        onChange={(e) => setSayItResponse(e.target.value)}
+                        placeholder="What did you say? Type or use the mic..."
+                        className="w-full p-4 pr-14 rounded-xl border border-border/50 bg-muted/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-crimson-vivid/50 focus:border-crimson-vivid/50 resize-none font-card text-lg transition-all"
+                        rows={3}
+                        disabled={isSayItRecording || isSayItTranscribing}
+                      />
+                      <Button
+                        type="button"
+                        onClick={isSayItRecording ? stopSayItRecording : startSayItRecording}
+                        variant={isSayItRecording ? "destructive" : "ghost"}
+                        size="icon"
+                        className="absolute bottom-2 right-2 h-10 w-10 rounded-full"
+                        disabled={isSayItTranscribing || isAnalyzing}
+                      >
+                        {isSayItTranscribing ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : isSayItRecording ? (
+                          <Square className="w-5 h-5" />
+                        ) : (
+                          <Mic className="w-5 h-5" />
+                        )}
+                      </Button>
+                    </div>
+                    {isSayItRecording && (
+                      <p className="text-xs text-crimson-glow animate-pulse text-center mt-2">Recording... tap to stop</p>
+                    )}
                   </div>
                 )}
                 
