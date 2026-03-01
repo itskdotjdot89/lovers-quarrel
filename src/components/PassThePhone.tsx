@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Smartphone } from 'lucide-react';
 
@@ -10,15 +10,18 @@ interface PassThePhoneProps {
 const PassThePhone = ({ nextPlayerName, onReady }: PassThePhoneProps) => {
   const [countdown, setCountdown] = useState<number | null>(null);
 
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
+
   useEffect(() => {
     if (countdown === null) return;
     if (countdown === 0) {
-      onReady();
+      onReadyRef.current();
       return;
     }
     const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
     return () => clearTimeout(timer);
-  }, [countdown, onReady]);
+  }, [countdown]);
 
   return (
     <div className="fixed inset-0 z-50 bg-background flex items-center justify-center p-6">
