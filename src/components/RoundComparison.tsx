@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Heart } from 'lucide-react';
+import { ChevronRight, Heart, Sparkles, Loader2 } from 'lucide-react';
 import { Card as CardType } from '@/types/game';
+import AIAnalysisDialog from '@/components/AIAnalysisDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface PlayerResponse {
   playerName: string;
@@ -18,6 +22,9 @@ interface RoundComparisonProps {
 
 const RoundComparison = ({ card, player1Response, player2Response, onContinue }: RoundComparisonProps) => {
   const isSameChoice = player1Response.choice === player2Response.choice;
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<{ text: string; sentiment: string; themes: string[] } | null>(null);
 
   const getDisplayText = (resp: PlayerResponse) => {
     if (resp.choiceLabel) return resp.choiceLabel;
@@ -25,63 +32,138 @@ const RoundComparison = ({ card, player1Response, player2Response, onContinue }:
     return resp.choice || '—';
   };
 
+  const getResponseText = (resp: PlayerResponse) => {
+    if (resp.responseText) return resp.responseText;
+    if (resp.choiceLabel) return resp.choiceLabel;
+    return resp.choice || '';
+  };
+
+  const handleGetInsights = async () => {
+    setIsAnalyzing(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Please sign in to get AI insights');
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('analyze-response', {
+        body: {
+          couplesMode: true,
+          cardId: card.id,
+          questionText: card.text,
+          deckId: card.deckId,
+          player1Response: getResponseText(player1Response),
+          player2Response: getResponseText(player2Response),
+          player1Name: player1Response.playerName,
+          player2Name: player2Response.playerName,
+        }
+      });
+
+      if (error) throw error;
+
+      setAnalysisResult({
+        text: data.analysis,
+        sentiment: data.sentiment,
+        themes: data.keyThemes,
+      });
+      setShowAnalysis(true);
+    } catch (error) {
+      console.error('Couples analysis error:', error);
+      toast.error('Failed to analyze responses');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="flex flex-col items-center gap-6 text-center max-w-md w-full animate-slide-up">
-        {/* Card question */}
-        <div className="glass rounded-xl border border-border/50 p-5 w-full">
-          <p className="font-card text-lg text-foreground leading-relaxed">{card.text}</p>
-        </div>
-
-        {/* Side-by-side responses */}
-        <div className="grid grid-cols-2 gap-3 w-full">
-          {[player1Response, player2Response].map((resp, i) => (
-            <div
-              key={i}
-              className="glass rounded-xl border border-border/50 p-4 flex flex-col items-center gap-3 relative overflow-hidden"
-            >
-              {/* Top accent */}
-              <div className={`absolute top-0 left-0 right-0 h-1 ${i === 0 ? 'bg-crimson-vivid' : 'bg-purple'}`} />
-              
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                {resp.playerName}
-              </p>
-              <p className="font-card text-base text-foreground leading-snug">
-                {getDisplayText(resp)}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Match indicator */}
-        {player1Response.choice && player2Response.choice && (
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${
-            isSameChoice 
-              ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-              : 'bg-muted text-muted-foreground border border-border/50'
-          }`}>
-            {isSameChoice ? (
-              <>
-                <Heart className="w-4 h-4 fill-current" />
-                You're in sync!
-              </>
-            ) : (
-              'Different choices — time to discuss! 💬'
-            )}
+    <>
+      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-6 text-center max-w-md w-full animate-slide-up">
+          {/* Card question */}
+          <div className="glass rounded-xl border border-border/50 p-5 w-full">
+            <p className="font-card text-lg text-foreground leading-relaxed">{card.text}</p>
           </div>
-        )}
 
-        {/* Continue button */}
-        <Button
-          onClick={onContinue}
-          size="lg"
-          className="h-14 px-8 text-lg bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid btn-glow group"
-        >
-          Next Card
-          <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-        </Button>
+          {/* Side-by-side responses */}
+          <div className="grid grid-cols-2 gap-3 w-full">
+            {[player1Response, player2Response].map((resp, i) => (
+              <div
+                key={i}
+                className="glass rounded-xl border border-border/50 p-4 flex flex-col items-center gap-3 relative overflow-hidden"
+              >
+                <div className={`absolute top-0 left-0 right-0 h-1 ${i === 0 ? 'bg-crimson-vivid' : 'bg-purple'}`} />
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  {resp.playerName}
+                </p>
+                <p className="font-card text-base text-foreground leading-snug">
+                  {getDisplayText(resp)}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Match indicator */}
+          {player1Response.choice && player2Response.choice && (
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${
+              isSameChoice 
+                ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                : 'bg-muted text-muted-foreground border border-border/50'
+            }`}>
+              {isSameChoice ? (
+                <>
+                  <Heart className="w-4 h-4 fill-current" />
+                  You're in sync!
+                </>
+              ) : (
+                'Different choices — time to discuss! 💬'
+              )}
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex flex-col gap-3 w-full">
+            <Button
+              onClick={handleGetInsights}
+              disabled={isAnalyzing}
+              variant="outline"
+              size="lg"
+              className="h-12 w-full border-crimson-vivid/30 hover:bg-crimson-vivid/10 text-foreground"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Analyzing both answers...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2 text-crimson-glow" />
+                  Get AI Insights
+                </>
+              )}
+            </Button>
+
+            <Button
+              onClick={onContinue}
+              size="lg"
+              className="h-14 px-8 text-lg bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid btn-glow group"
+            >
+              Next Card
+              <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </div>
+        </div>
       </div>
-    </div>
+
+      <AIAnalysisDialog
+        open={showAnalysis}
+        onOpenChange={setShowAnalysis}
+        analysis={analysisResult?.text || ''}
+        question={card.text}
+        sentiment={analysisResult?.sentiment}
+        keyThemes={analysisResult?.themes}
+      />
+    </>
   );
 };
 

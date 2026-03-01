@@ -61,6 +61,77 @@ Structure your response:
 Remember: This is about helping couples connect deeper. Celebrate vulnerability, encourage honest communication, and highlight growth opportunities.`;
 };
 
+const buildCouplesSystemPrompt = (deckId: DeckMood | null): string => {
+  const persona = deckId ? DECK_PERSONAS[deckId] : DECK_PERSONAS.real_talk;
+  
+  return `You are the "${persona.name}" – a relationship psychology expert with a ${persona.tone} approach. Your specialty is ${persona.focus}.
+
+You are analyzing BOTH partners' answers to the same intimate question. Compare and contrast their responses thoughtfully.
+
+Provide a warm, insightful analysis in 2-3 short paragraphs:
+1. **Compatibility**: What their answers reveal about their connection — where they align and what that means.
+2. **Differences**: Any contrasts and what they might indicate — frame these positively as opportunities to learn about each other.
+3. **Conversation Starter**: End with one specific, fun conversation starter they can use right now based on their answers.
+
+Be playful, supportive, and never judgmental. Celebrate both alignment AND differences as signs of a dynamic relationship.`;
+};
+
+async function handleCouplesAnalysis(
+  req: Request,
+  user: { id: string },
+  params: { cardId: string; questionText: string; deckId: string; player1Response: string; player2Response: string; player1Name: string; player2Name: string },
+  supabaseClient: any
+) {
+  const { cardId, questionText, deckId, player1Response, player2Response, player1Name, player2Name } = params;
+
+  const validDecks: DeckMood[] = ['freaky', 'real_talk', 'love_drunk'];
+  const validatedDeckId: DeckMood | null = deckId && validDecks.includes(deckId as DeckMood) ? deckId as DeckMood : null;
+
+  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+  if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
+
+  const systemPrompt = buildCouplesSystemPrompt(validatedDeckId);
+
+  const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'google/gemini-3-flash-preview',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: `Question: "${questionText || 'Unknown question'}"\n\n${player1Name || 'Player 1'}'s answer: "${player1Response}"\n\n${player2Name || 'Player 2'}'s answer: "${player2Response}"\n\nAnalyze both answers together.`
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 500
+    }),
+  });
+
+  if (!aiResponse.ok) {
+    const errorText = await aiResponse.text();
+    console.error('Lovable AI error:', errorText);
+    throw new Error(`AI analysis failed: ${errorText}`);
+  }
+
+  const aiResult = await aiResponse.json();
+  const analysisText = aiResult.choices[0].message.content;
+
+  return new Response(
+    JSON.stringify({
+      analysis: analysisText,
+      sentiment: 'couples',
+      keyThemes: [],
+      couplesMode: true
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -83,7 +154,12 @@ serve(async (req) => {
       throw new Error('User not authenticated');
     }
 
-    const { responseText, cardId, questionText, deckId, depth = 'standard' } = await req.json();
+    const { responseText, cardId, questionText, deckId, depth = 'standard', couplesMode, player1Response, player2Response, player1Name, player2Name } = await req.json();
+    
+    // Couples mode: analyze both players together
+    if (couplesMode && player1Response && player2Response) {
+      return await handleCouplesAnalysis(req, user, { cardId, questionText, deckId, player1Response, player2Response, player1Name, player2Name }, supabaseClient);
+    }
     
     // Input validation
     if (!responseText || typeof responseText !== 'string') {
