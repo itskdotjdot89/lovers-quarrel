@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Users, Loader2, ChevronRight, Sparkles, Mic, Square } from 'lucide-react';
 import PassThePhone from '@/components/PassThePhone';
+import RoundComparison from '@/components/RoundComparison';
 import GameCard from '@/components/GameCard';
 import AIAnalysisDialog from '@/components/AIAnalysisDialog';
 import MultiplayerResponseInput from '@/components/MultiplayerResponseInput';
@@ -57,6 +58,8 @@ const Gameplay = () => {
   });
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [showPassScreen, setShowPassScreen] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
+  const [localResponses, setLocalResponses] = useState<Record<string, { player1?: { choice?: string; choiceLabel?: string; responseText?: string }; player2?: { choice?: string; choiceLabel?: string; responseText?: string } }>>({});
   const currentPlayerName = isCouplesLocal ? playerNames[currentPlayerIndex] : '';
 
   const analyzeChoice = async (responseText: string) => {
@@ -420,13 +423,22 @@ const Gameplay = () => {
     } else {
       const nextIndex = currentIndex + 1;
       
-      if (nextIndex < cards.length) {
-        if (isCouplesLocal) {
-          const nextPlayer = currentPlayerIndex === 0 ? 1 : 0;
-          setCurrentPlayerIndex(nextPlayer);
-          setPendingNextIndex(nextIndex);
+      if (isCouplesLocal) {
+        if (currentPlayerIndex === 0) {
+          // Player 1 done → pass phone to Player 2 for the SAME card
+          setCurrentPlayerIndex(1);
           setShowPassScreen(true);
+          // Clear pending choice UI for next player
+          setPendingChoice(null);
+          setSayItResponse('');
         } else {
+          // Player 2 done → show comparison
+          setPendingChoice(null);
+          setSayItResponse('');
+          setShowComparison(true);
+        }
+      } else {
+        if (nextIndex < cards.length) {
           // Trigger flip animation
           setIsFlipping(true);
           setTimeout(() => {
@@ -434,9 +446,9 @@ const Gameplay = () => {
             setCurrentIndex(nextIndex);
             setIsFlipping(false);
           }, 300);
+        } else {
+          toast.info('No more cards in this session');
         }
-      } else {
-        toast.info('No more cards in this session');
       }
     }
   };
@@ -446,6 +458,7 @@ const Gameplay = () => {
   const handlePassReady = () => {
     setShowPassScreen(false);
     if (pendingNextIndex !== null) {
+      // Advancing to next card (after comparison)
       setIsFlipping(true);
       setTimeout(() => {
         setCurrentCard(cards[pendingNextIndex]);
@@ -454,6 +467,32 @@ const Gameplay = () => {
         setPendingNextIndex(null);
       }, 300);
     }
+    // Otherwise Player 2 sees the same card — no advance needed
+  };
+
+  const handleComparisonContinue = () => {
+    setShowComparison(false);
+    const nextIndex = currentIndex + 1;
+    if (nextIndex < cards.length) {
+      // Reset to Player 1 and pass phone
+      setCurrentPlayerIndex(0);
+      setShowPassScreen(true);
+      setPendingNextIndex(nextIndex);
+    } else {
+      toast.info('No more cards in this session');
+    }
+  };
+
+  const storeCouplesLocalResponse = (choice?: string, choiceLabel?: string, responseText?: string) => {
+    if (!currentCard) return;
+    const playerKey = currentPlayerIndex === 0 ? 'player1' : 'player2';
+    setLocalResponses(prev => ({
+      ...prev,
+      [currentCard.id]: {
+        ...prev[currentCard.id],
+        [playerKey]: { choice, choiceLabel, responseText }
+      }
+    }));
   };
 
   const handleFavorite = () => {
@@ -576,13 +615,22 @@ const Gameplay = () => {
               }
               
               let responseText = '';
+              let choiceLabel = '';
               
               if (currentCard.subtype === 'this_or_that') {
-                responseText = `I chose "${choice === 'A' ? currentCard.choiceA : currentCard.choiceB}" over "${choice === 'A' ? currentCard.choiceB : currentCard.choiceA}"`;
+                choiceLabel = choice === 'A' ? (currentCard.choiceA || 'A') : (currentCard.choiceB || 'B');
+                responseText = `I chose "${choiceLabel}" over "${choice === 'A' ? currentCard.choiceB : currentCard.choiceA}"`;
               } else if (currentCard.subtype === 'say_sip_strip') {
+                choiceLabel = choice;
                 responseText = `I chose to: ${choice}`;
               } else {
+                choiceLabel = choice;
                 responseText = `My choice: ${choice}`;
+              }
+              
+              // Store for couples local comparison
+              if (isCouplesLocal) {
+                storeCouplesLocalResponse(choice, choiceLabel);
               }
               
               toast.success(responseText);
@@ -735,6 +783,22 @@ const Gameplay = () => {
         <PassThePhone
           nextPlayerName={playerNames[currentPlayerIndex]}
           onReady={handlePassReady}
+        />
+      )}
+
+      {/* Round comparison overlay for couples local mode */}
+      {showComparison && currentCard && (
+        <RoundComparison
+          card={currentCard}
+          player1Response={{
+            playerName: playerNames[0],
+            ...(localResponses[currentCard.id]?.player1 || {})
+          }}
+          player2Response={{
+            playerName: playerNames[1],
+            ...(localResponses[currentCard.id]?.player2 || {})
+          }}
+          onContinue={handleComparisonContinue}
         />
       )}
     </div>
