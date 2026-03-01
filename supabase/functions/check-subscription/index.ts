@@ -69,7 +69,8 @@ serve(async (req) => {
       "dmpaige92@gmail.com", 
       "samuelkennethjohnsonjr@gmail.com",
       "samuelkennethjonsonjr@gmail.com",
-      "dmpaige93@gmail.com"
+      "dmpaige93@gmail.com",
+      "kjshotme@gmail.com"
       // Note: demo@loversquarrel.com is NOT whitelisted - Apple reviewers must test IAP flow
     ];
     
