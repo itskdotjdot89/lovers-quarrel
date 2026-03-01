@@ -10,6 +10,7 @@ import PartnerResponses from '@/components/PartnerResponses';
 import PaywallOverlay from '@/components/PaywallOverlay';
 import { Card as CardType } from '@/types/game';
 import { loadFavorites, saveFavorites, toggleFavorite, shuffleCards } from '@/lib/gameLogic';
+import { recordSessionAndCheckPrompt, requestAppReview } from '@/lib/appReview';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { usePresence } from '@/hooks/usePresence';
@@ -331,6 +332,11 @@ const Gameplay = () => {
           setIsFlipping(false);
         }, 300);
       } else {
+        // Session complete — check if we should prompt for a review
+        const shouldPrompt = recordSessionAndCheckPrompt();
+        if (shouldPrompt) {
+          await requestAppReview();
+        }
         toast.info('No more cards in this session');
       }
     }
