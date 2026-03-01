@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CreditCard, Check, Trash2, Loader2, Brain } from 'lucide-react';
+import { ArrowLeft, CreditCard, Check, Trash2, Loader2, Brain, Star } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { requestAppReview } from '@/lib/appReview';
 import { SpiceLevel } from '@/types/game';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -297,6 +299,27 @@ const Settings = () => {
             <div className="space-y-2 font-card text-sm text-muted-foreground">
               <p>Version 1.0.0</p>
               <p>An intimate conversation card game</p>
+
+              {/* Rate the App - only on native */}
+              {Capacitor.isNativePlatform() && (
+                <Button
+                  onClick={async () => {
+                    const success = await requestAppReview();
+                    if (!success) {
+                      toast({
+                        title: "Thanks!",
+                        description: "If the review prompt didn't appear, you can rate us directly on the App Store.",
+                      });
+                    }
+                  }}
+                  variant="outline"
+                  className="w-full mt-3"
+                >
+                  <Star className="w-4 h-4 mr-2" />
+                  Rate the App
+                </Button>
+              )}
+
               <p className="pt-4 text-xs">
                 18+ only • Play responsibly • Respect boundaries
               </p>
