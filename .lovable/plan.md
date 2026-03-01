@@ -1,94 +1,46 @@
 
-# Friends Feature for Lovers Quarrel
+# Fix Couples Play and Forgot Password for iOS
 
-## Overview
-Add a private friends list where logged-in users can add people by email or username, manage friend status, and use their list when starting multiplayer sessions.
+## Issue 1: Couples Play - Realtime Card Sync Broken
 
-## Database Changes
+**Root cause**: In `Gameplay.tsx`, `subscribeToSession()` is called once on mount (line 87) but captures `cards` in its closure when `cards` is still an empty array. When the host advances cards, the non-host player's realtime handler runs `cards[newIndex]` against `[]` and gets `undefined`, so `setCurrentCard` is never called. The non-host sees the same card forever.
 
-### New table: `friend_links`
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid (PK) | default gen_random_uuid() |
-| owner_user_id | uuid, NOT NULL | FK to profiles(id) ON DELETE CASCADE |
-| friend_user_id | uuid, nullable | FK to profiles(id) ON DELETE SET NULL |
-| friend_email | text, nullable | for unregistered invites |
-| friend_display_name | text, nullable | snapshot for display |
-| status | text, NOT NULL | 'pending', 'linked', 'blocked', 'removed' |
-| created_at | timestamptz | default now() |
-| updated_at | timestamptz | default now() |
+**Fix**:
+- Refactor `subscribeToSession()` to use a `useRef` for `cards` so the realtime callback always reads the latest value
+- Alternatively, re-subscribe when `cards` changes (simpler but more reconnects)
+- Also: the `handleCancelSession` calls DELETE on `game_sessions` but there's no DELETE RLS policy, so cancellation silently fails -- add a DELETE policy for the host
 
-### Constraints
-- Partial unique index on `(owner_user_id, friend_user_id)` WHERE `friend_user_id IS NOT NULL`
-- Partial unique index on `(owner_user_id, friend_email)` WHERE `friend_email IS NOT NULL`
-- CHECK: at least one of `friend_user_id` or `friend_email` is not null
+**Changes**:
+- `src/pages/Gameplay.tsx`: Add a `cardsRef` that stays in sync with `cards` state, use it inside the realtime handler
+- Database migration: Add DELETE policy on `game_sessions` for host
 
-### RLS Policies (all restrictive)
-- SELECT: `owner_user_id = auth.uid()`
-- INSERT: `owner_user_id = auth.uid()`
-- UPDATE: `owner_user_id = auth.uid()`
-- DELETE: `owner_user_id = auth.uid()`
+## Issue 2: Forgot Password Email Not Working on iOS
 
-### Trigger
-- Reuse existing `update_updated_at_column()` trigger on friend_links
+**Root causes**:
+1. The password reset redirect URL uses `window.location.origin` which resolves to `capacitor://localhost` inside the native iOS app -- this is not a valid HTTP URL that email links can open
+2. There is no `/reset-password` page that handles the recovery token and lets the user set a new password. The current redirect goes to `/auth` which just shows the login form
+3. No custom email domain is configured, so password reset emails may go to spam or not be sent
 
-### Auto-link trigger
-- Database function that fires on new user signup: checks `friend_links` for matching `friend_email`, then sets `friend_user_id` and status to `linked`
+**Fix**:
+- Use the **published web URL** (`https://lovers-whispers-app.lovable.app`) as the redirect target instead of `window.location.origin` for password reset
+- Create a new `/reset-password` page that:
+  - Detects the `type=recovery` hash parameter from the email link
+  - Shows a "set new password" form
+  - Calls `supabase.auth.updateUser({ password })` to complete the reset
+  - Redirects to the login page on success
+- Add the `/reset-password` route to `App.tsx`
 
-## Frontend Changes
+**Changes**:
+- `src/pages/Auth.tsx`: Change `redirectTo` in `resetPasswordForEmail` to use the published URL + `/reset-password`
+- `src/pages/ResetPassword.tsx`: New page with password update form
+- `src/App.tsx`: Add `/reset-password` route
 
-### 1. New page: `src/pages/Friends.tsx`
-- Requires authentication (redirect to /auth if not logged in)
-- Header with back button to /home
-- Add Friend section:
-  - Toggle between Email / Username input mode
-  - Input field + "Add Friend" button
-  - Privacy-preserving feedback: always shows neutral success message
-- Friends list:
-  - Client-side search filter
-  - Sort toggle: Recent / A-Z
-  - Each friend card shows display name/email, status badge (Linked/Pending/Blocked)
-  - Actions: Remove, Block (via dropdown or buttons)
-- Empty state with friendly copy
+## Technical Summary
 
-### 2. New hook: `src/hooks/useFriends.ts`
-- `useFriends()` - fetches friend list for current user
-- `addFriendByEmail(email)` - looks up profile by email, creates friend_link
-- `addFriendByUsername(displayName)` - looks up profile by display_name, creates friend_link
-- `removeFriend(id)` - updates status to 'removed'
-- `blockFriend(id)` - updates status to 'blocked'
-- All lookups done via edge function to avoid exposing user data client-side
-
-### 3. Edge function: `supabase/functions/add-friend/index.ts`
-- Accepts `{ type: 'email' | 'username', value: string }`
-- Server-side lookup of profiles table (service role)
-- If match found: insert friend_link with friend_user_id + status='linked'
-- If no match (email only): insert with friend_email + status='pending'
-- If no match (username): return neutral message (no disclosure)
-- Returns generic success response regardless of match
-
-### 4. Route + Navigation
-- Add `/friends` route in App.tsx
-- Add Friends button on Home page (grid alongside Favorites/Settings)
-- Use `Users` icon from lucide-react
-
-### 5. Styling
-- Follow existing dark theme with crimson accents
-- Glass card style matching Home page
-- Status badges: green for Linked, amber for Pending, red for Blocked
-
-## Technical Details
-
-### Privacy safeguards
-- The edge function uses service role to look up users, so the client never queries profiles of other users
-- All responses are neutral ("Friend added" / "If that user exists, they'll appear when they join")
-- No global user search or directory exposed
-- RLS ensures only owner can see their friend_links
-
-### File changes summary
-1. **Database migration** - Create `friend_links` table, indexes, RLS, auto-link trigger
-2. **`supabase/functions/add-friend/index.ts`** - New edge function for privacy-safe friend addition
-3. **`src/hooks/useFriends.ts`** - New hook for friend CRUD operations
-4. **`src/pages/Friends.tsx`** - New Friends page UI
-5. **`src/App.tsx`** - Add /friends route
-6. **`src/pages/Home.tsx`** - Add Friends navigation tile
+| File | Change |
+|------|--------|
+| `src/pages/Gameplay.tsx` | Fix stale closure bug with `useRef` for cards array; realtime handler uses ref |
+| `src/pages/Auth.tsx` | Update reset password redirect URL to published web URL + `/reset-password` |
+| `src/pages/ResetPassword.tsx` | New page: handle recovery token, show new password form, call `updateUser` |
+| `src/App.tsx` | Add `/reset-password` route |
+| Database migration | Add DELETE policy on `game_sessions` for host (`auth.uid() = host_id`) |
