@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Users, Loader2, ChevronRight, Sparkles } from 'lucide-react';
@@ -20,6 +20,7 @@ const Gameplay = () => {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session');
   const [cards, setCards] = useState<CardType[]>([]);
+  const cardsRef = useRef<CardType[]>([]);
   const [currentCard, setCurrentCard] = useState<CardType | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [showAnalysisDialog, setShowAnalysisDialog] = useState(false);
@@ -134,6 +135,7 @@ const Gameplay = () => {
     const shuffled = shuffleCards(mappedCards);
     
     setCards(shuffled);
+    cardsRef.current = shuffled;
     setTotalCards(shuffled.length);
     setCurrentCard(shuffled[0]);
     setCurrentIndex(0);
@@ -187,6 +189,7 @@ const Gameplay = () => {
           }));
         
         setCards(orderedCards);
+        cardsRef.current = orderedCards;
         setCurrentCard(orderedCards[session.current_card_index] || null);
       }
     }
@@ -230,11 +233,12 @@ const Gameplay = () => {
         table: 'game_sessions', 
         filter: `id=eq.${sessionId}` 
       }, (payload) => {
-        // Only update the card index instead of full reload
         const newIndex = payload.new.current_card_index;
         setCurrentIndex(newIndex);
-        if (cards.length > 0 && cards[newIndex]) {
-          setCurrentCard(cards[newIndex]);
+        // Use cardsRef to always read the latest cards array
+        const latestCards = cardsRef.current;
+        if (latestCards.length > 0 && latestCards[newIndex]) {
+          setCurrentCard(latestCards[newIndex]);
         }
       })
       .on('postgres_changes', { 
