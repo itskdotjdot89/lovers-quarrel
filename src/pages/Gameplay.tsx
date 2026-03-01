@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Users, Loader2, ChevronRight, Sparkles, Mic, Square } from 'lucide-react';
+import PassThePhone from '@/components/PassThePhone';
 import GameCard from '@/components/GameCard';
 import AIAnalysisDialog from '@/components/AIAnalysisDialog';
 import MultiplayerResponseInput from '@/components/MultiplayerResponseInput';
@@ -42,6 +43,21 @@ const Gameplay = () => {
   const sayItMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const sayItChunksRef = useRef<Blob[]>([]);
   const { shouldShowPaywall, recordCardView, cardsViewed, freeCardsRemaining, FREE_CARD_LIMIT } = useFreemiumLimit();
+
+  // Couples local (one device) turn-taking state
+  const configStr = localStorage.getItem('lq_session_config');
+  const sessionConfig = configStr ? JSON.parse(configStr) : null;
+  const isCouplesLocal = !sessionId && sessionConfig?.mode === 'couples_local';
+  const [playerNames] = useState<[string, string]>(() => {
+    if (isCouplesLocal) {
+      const names = sessionConfig?.playerNames;
+      return names && names.length === 2 ? names : ['Player 1', 'Player 2'];
+    }
+    return ['Player 1', 'Player 2'];
+  });
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
+  const [showPassScreen, setShowPassScreen] = useState(false);
+  const currentPlayerName = isCouplesLocal ? playerNames[currentPlayerIndex] : '';
 
   const analyzeChoice = async (responseText: string) => {
     if (!currentCard) return;
@@ -405,16 +421,38 @@ const Gameplay = () => {
       const nextIndex = currentIndex + 1;
       
       if (nextIndex < cards.length) {
-        // Trigger flip animation
-        setIsFlipping(true);
-        setTimeout(() => {
-          setCurrentCard(cards[nextIndex]);
-          setCurrentIndex(nextIndex);
-          setIsFlipping(false);
-        }, 300);
+        if (isCouplesLocal) {
+          const nextPlayer = currentPlayerIndex === 0 ? 1 : 0;
+          setCurrentPlayerIndex(nextPlayer);
+          setPendingNextIndex(nextIndex);
+          setShowPassScreen(true);
+        } else {
+          // Trigger flip animation
+          setIsFlipping(true);
+          setTimeout(() => {
+            setCurrentCard(cards[nextIndex]);
+            setCurrentIndex(nextIndex);
+            setIsFlipping(false);
+          }, 300);
+        }
       } else {
         toast.info('No more cards in this session');
       }
+    }
+  };
+
+  const [pendingNextIndex, setPendingNextIndex] = useState<number | null>(null);
+
+  const handlePassReady = () => {
+    setShowPassScreen(false);
+    if (pendingNextIndex !== null) {
+      setIsFlipping(true);
+      setTimeout(() => {
+        setCurrentCard(cards[pendingNextIndex]);
+        setCurrentIndex(pendingNextIndex);
+        setIsFlipping(false);
+        setPendingNextIndex(null);
+      }, 300);
     }
   };
 
@@ -473,6 +511,13 @@ const Gameplay = () => {
             <div className="glass px-4 py-2 rounded-full flex items-center gap-2 border border-border/50">
               <Users className="w-4 h-4 text-crimson-glow" />
               <span className="text-sm font-medium">{participants.length} Players</span>
+            </div>
+          )}
+
+          {isCouplesLocal && (
+            <div className="glass px-4 py-2 rounded-full flex items-center gap-2 border border-primary/30 bg-primary/5">
+              <Users className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold text-primary">{currentPlayerName}'s turn</span>
             </div>
           )}
           
@@ -683,6 +728,14 @@ const Gameplay = () => {
       {/* Paywall overlay for free users who've hit the limit */}
       {shouldShowPaywall && (
         <PaywallOverlay cardsViewed={cardsViewed} onClose={() => navigate('/decks')} />
+      )}
+
+      {/* Pass the phone overlay for couples local mode */}
+      {showPassScreen && (
+        <PassThePhone
+          nextPlayerName={playerNames[currentPlayerIndex]}
+          onReady={handlePassReady}
+        />
       )}
     </div>
   );
