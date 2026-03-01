@@ -87,8 +87,13 @@ const Gameplay = () => {
       loadMultiplayerSession();
       const cleanup = subscribeToSession();
 
-      // Fallback polling: sync card index every 3s in case realtime misses an event
-      const pollInterval = setInterval(async () => {
+      // Adaptive polling: starts at 1s, backs off to 5s when idle, resets on change
+      const pollIntervalRef = { current: 1000 };
+      let pollTimeout: ReturnType<typeof setTimeout>;
+      let cancelled = false;
+
+      const poll = async () => {
+        if (cancelled) return;
         const { data } = await supabase
           .from('game_sessions')
           .select('current_card_index')
@@ -101,16 +106,25 @@ const Gameplay = () => {
               if (latestCards[data.current_card_index]) {
                 setCurrentCard(latestCards[data.current_card_index]);
               }
+              // Reset to fast polling on change
+              pollIntervalRef.current = 1000;
               return data.current_card_index;
             }
+            // Back off: increase interval by 1.5x, cap at 5s
+            pollIntervalRef.current = Math.min(pollIntervalRef.current * 1.5, 5000);
             return prev;
           });
         }
-      }, 3000);
+        if (!cancelled) {
+          pollTimeout = setTimeout(poll, pollIntervalRef.current);
+        }
+      };
+      pollTimeout = setTimeout(poll, pollIntervalRef.current);
 
       return () => {
         cleanup?.();
-        clearInterval(pollInterval);
+        cancelled = true;
+        clearTimeout(pollTimeout);
       };
     } else {
       loadSoloSession();
