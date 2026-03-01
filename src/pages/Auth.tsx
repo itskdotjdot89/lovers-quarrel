@@ -126,7 +126,7 @@ const Auth = () => {
     setResetLoading(true);
 
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-      redirectTo: `${window.location.origin}/auth`
+      redirectTo: `https://lovers-whispers-app.lovable.app/reset-password`
     });
 
     if (error) {
