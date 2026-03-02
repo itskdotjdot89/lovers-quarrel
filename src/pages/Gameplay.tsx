@@ -675,7 +675,7 @@ const Gameplay = () => {
           )}
           
           {/* AI Analysis prompt */}
-          {pendingChoice && !isCouplesLocal && (
+          {pendingChoice && !isCouplesLocal && !sessionId && (
             <div className="mt-6 w-full max-w-2xl animate-slide-up">
               <div className="glass rounded-xl p-6 border border-crimson-vivid/30">
                 <div className="flex items-center gap-3 mb-4">
