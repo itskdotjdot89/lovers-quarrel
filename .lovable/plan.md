@@ -1,31 +1,31 @@
 
 
-# Speed Up Couples Mode Sync for Joining Player
+## Show Text Input When "Say It" Is Selected
 
-## Problem
-The joining player currently waits up to 3 seconds to see the next card because the fallback polling interval is fixed at 3000ms. On iOS, Realtime websocket events can be delayed or missed, making the polling the primary sync mechanism.
+**Problem**: On Say/Sip/Strip cards, selecting "Say it" immediately records the choice and advances. There's no place to type what you actually want to say -- the text box only appears later in the optional AI analysis prompt (solo mode only), and doesn't exist at all in couples mode.
 
-## Solution
-Replace the fixed 3-second polling with aggressive initial polling that backs off over time, and also make the Realtime handler more reliable.
+**Solution**: When "Say it" is tapped, instead of immediately submitting, show a text input area directly on the card so the player can type (or voice-record) their response before advancing.
 
-## Changes
+---
 
-### File: `src/pages/Gameplay.tsx`
+### How It Will Work
 
-1. **Reduce initial poll interval to 1 second** -- when the host advances, the joining player will catch up within ~1s instead of ~3s
-2. **Add exponential backoff** -- after detecting no change, gradually increase the interval (1s -> 1.5s -> 2.25s -> max 5s) to reduce unnecessary network calls
-3. **Reset interval on change** -- when a new card index is detected (via poll or Realtime), reset the poll interval back to 1s for fast response on the next advance
-4. **Use `setTimeout` instead of `setInterval`** -- allows dynamic interval adjustment between polls
+1. Tapping "Say it" transitions the card into a "response mode" showing a text area with mic button
+2. Tapping "Sip it" or "Strip it" works as before (immediate action)
+3. After typing/recording, a "Submit" button sends the response and advances
 
-The Realtime subscription remains as-is (it already works correctly when events arrive). This change makes the fallback faster while still being efficient with network usage.
+### Technical Changes
 
-### Technical Detail
+**GameCard.tsx**
+- Add state to track when "Say it" is selected: `showSayItInput`
+- When "Say it" is clicked, show a text area + mic button + submit button instead of immediately calling `onChoice`
+- Add new prop `onSayItSubmit` for submitting text along with the choice
+- "Sip it" and "Strip it" continue to call `onChoice` directly
 
-```text
-Current:  Fixed 3s poll --> worst case 3s delay
-Proposed: 1s poll, backs off to 5s when idle, resets to 1s on change
-          --> worst case ~1s delay on card advance
-```
+**Gameplay.tsx**
+- Handle the new `onSayItSubmit` callback from GameCard
+- Pass the typed text as `responseText` when storing the response (couples mode) or setting `pendingChoice` (solo mode)
+- Remove the duplicate "Say it" text input from the AI analysis prompt section (lines 700-733) since it will now live on the card itself
+- Clean up the `sayItResponse`, recording refs, and related state that move into GameCard
 
-The implementation will use `useRef` for the poll interval and a recursive `setTimeout` pattern, cleaning up on unmount. The backoff caps at 5 seconds (not 30s) since gameplay sessions are active and short-lived.
-
+This keeps the flow intuitive: tap "Say it" -> type/speak -> submit, all on the same card view.
