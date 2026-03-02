@@ -12,9 +12,11 @@ interface OpenEndedInputProps {
   questionText: string;
   deckId?: DeckMood;
   onAnalysisComplete: (analysis: string, sentiment: string, themes: string[]) => void;
+  couplesMode?: boolean;
+  onSubmitOnly?: (text: string) => void;
 }
 
-const OpenEndedInput = ({ cardId, questionText, deckId, onAnalysisComplete }: OpenEndedInputProps) => {
+const OpenEndedInput = ({ cardId, questionText, deckId, onAnalysisComplete, couplesMode, onSubmitOnly }: OpenEndedInputProps) => {
   const [responseText, setResponseText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -106,6 +108,13 @@ const OpenEndedInput = ({ cardId, questionText, deckId, onAnalysisComplete }: Op
   const handleSubmit = async () => {
     if (!responseText.trim()) {
       toast.error('Please provide a response');
+      return;
+    }
+
+    // In couples mode, just submit the text without individual AI analysis
+    if (couplesMode && onSubmitOnly) {
+      onSubmitOnly(responseText.trim());
+      setResponseText('');
       return;
     }
 
@@ -205,7 +214,7 @@ const OpenEndedInput = ({ cardId, questionText, deckId, onAnalysisComplete }: Op
         ) : (
           <>
             <Send className="w-4 h-4 mr-2" />
-            Submit & Get AI Insights
+            {couplesMode ? 'Submit Response' : 'Submit & Get AI Insights'}
           </>
         )}
       </Button>
