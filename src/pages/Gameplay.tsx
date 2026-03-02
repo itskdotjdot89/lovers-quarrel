@@ -650,6 +650,12 @@ const Gameplay = () => {
                     cardId={currentCard.id}
                     questionText={currentCard.text}
                     deckId={currentCard.deckId}
+                    couplesMode={isCouplesLocal}
+                    onSubmitOnly={isCouplesLocal ? (text) => {
+                      storeCouplesLocalResponse(undefined, undefined, text);
+                      toast.success('Response submitted');
+                      handleNext();
+                    } : undefined}
                     onAnalysisComplete={(analysis, sentiment, themes) => {
                       setCurrentAnalysis({ text: analysis, sentiment, themes, question: currentCard.text });
                       setShowAnalysisDialog(true);
