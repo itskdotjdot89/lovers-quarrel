@@ -2,15 +2,20 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Mic, Type } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Mic, Type, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import TypingIndicator from './TypingIndicator';
+import AIAnalysisDialog from './AIAnalysisDialog';
+import { Card as CardType } from '@/types/game';
 
 interface Response {
   id: string;
   user_id: string;
   response_type: string;
   response_text: string;
+  choice?: string;
   created_at: string;
 }
 
@@ -25,10 +30,14 @@ interface PartnerResponsesProps {
   responses: Response[];
   participants: Participant[];
   presences: Record<string, any[]>;
+  card?: CardType;
 }
 
-const PartnerResponses = ({ sessionId, cardId, responses, participants, presences }: PartnerResponsesProps) => {
+const PartnerResponses = ({ sessionId, cardId, responses, participants, presences, card }: PartnerResponsesProps) => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<{ text: string; sentiment: string; themes: string[] } | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -46,6 +55,44 @@ const PartnerResponses = ({ sessionId, cardId, responses, participants, presence
   };
 
   const filteredResponses = responses.filter(r => r.user_id !== currentUserId);
+  const myResponses = responses.filter(r => r.user_id === currentUserId);
+
+  const handleGetInsights = async () => {
+    if (!card || myResponses.length === 0 || filteredResponses.length === 0) return;
+    setIsAnalyzing(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.error('Please sign in to get AI insights'); return; }
+
+      const myName = getParticipantName(user.id);
+      const partnerName = getParticipantName(filteredResponses[0].user_id);
+      const myText = myResponses[0].response_text || myResponses[0].choice || '';
+      const partnerText = filteredResponses[0].response_text || filteredResponses[0].choice || '';
+
+      const { data, error } = await supabase.functions.invoke('analyze-response', {
+        body: {
+          couplesMode: true,
+          cardId: card.id,
+          questionText: card.text,
+          deckId: card.deckId,
+          player1Response: myText,
+          player2Response: partnerText,
+          player1Name: myName,
+          player2Name: partnerName,
+        }
+      });
+      if (error) throw error;
+      setAnalysisResult({ text: data.analysis, sentiment: data.sentiment, themes: data.keyThemes });
+      setShowAnalysis(true);
+    } catch (error) {
+      console.error('Couples analysis error:', error);
+      toast.error('Failed to analyze responses');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const canAnalyze = card && myResponses.length > 0 && filteredResponses.length > 0;
 
   // Get partner's current status from presences
   const partnerPresence = Object.values(presences)
@@ -116,6 +163,36 @@ const PartnerResponses = ({ sessionId, cardId, responses, participants, presence
           </Card>
         );
       })}
+
+      {canAnalyze && (
+        <Button
+          onClick={handleGetInsights}
+          disabled={isAnalyzing}
+          variant="outline"
+          className="w-full border-crimson-vivid/30 hover:bg-crimson-vivid/10 text-foreground"
+        >
+          {isAnalyzing ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Analyzing both answers...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4 mr-2 text-crimson-glow" />
+              Get AI Insights
+            </>
+          )}
+        </Button>
+      )}
+
+      <AIAnalysisDialog
+        open={showAnalysis}
+        onOpenChange={setShowAnalysis}
+        analysis={analysisResult?.text || ''}
+        question={card?.text}
+        sentiment={analysisResult?.sentiment}
+        keyThemes={analysisResult?.themes}
+      />
     </div>
   );
 };
