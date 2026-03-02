@@ -71,8 +71,8 @@ const RoundComparison = ({ card, player1Response, player2Response, onContinue }:
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-6 text-center max-w-md w-full animate-slide-up">
+      <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm overflow-y-auto p-4">
+        <div className="flex flex-col items-center gap-6 text-center max-w-md w-full animate-slide-up mx-auto my-auto min-h-full justify-center py-8">
           {/* Card question */}
           <div className="glass rounded-xl border border-border/50 p-5 w-full">
             <p className="font-card text-lg text-foreground leading-relaxed">{card.text}</p>
