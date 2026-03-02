@@ -669,6 +669,7 @@ const Gameplay = () => {
                 responses={responses}
                 participants={participants}
                 presences={presences}
+                card={currentCard}
               />
             </div>
           )}
