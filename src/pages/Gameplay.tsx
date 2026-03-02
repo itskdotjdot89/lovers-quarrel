@@ -628,9 +628,12 @@ const Gameplay = () => {
                 responseText = `My choice: ${choice}`;
               }
               
-              // Store for couples local comparison
+              // Store for couples local comparison and auto-advance
               if (isCouplesLocal) {
                 storeCouplesLocalResponse(choice, choiceLabel);
+                toast.success('Response submitted');
+                handleNext();
+                return;
               }
               
               toast.success(responseText);
