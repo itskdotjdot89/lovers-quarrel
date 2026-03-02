@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, Heart, Sparkles, Loader2 } from 'lucide-react';
 import { Card as CardType } from '@/types/game';
-import AIAnalysisDialog from '@/components/AIAnalysisDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -23,8 +22,7 @@ interface RoundComparisonProps {
 const RoundComparison = ({ card, player1Response, player2Response, onContinue }: RoundComparisonProps) => {
   const isSameChoice = player1Response.choice === player2Response.choice;
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [showAnalysis, setShowAnalysis] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<{ text: string; sentiment: string; themes: string[] } | null>(null);
+  const [synopsis, setSynopsis] = useState<string | null>(null);
 
   const getDisplayText = (resp: PlayerResponse) => {
     if (resp.choiceLabel) return resp.choiceLabel;
@@ -38,43 +36,38 @@ const RoundComparison = ({ card, player1Response, player2Response, onContinue }:
     return resp.choice || '';
   };
 
-  const handleGetInsights = async () => {
-    setIsAnalyzing(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('Please sign in to get AI insights');
-        return;
+  // Auto-trigger analysis when component mounts
+  useEffect(() => {
+    const fetchInsights = async () => {
+      setIsAnalyzing(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase.functions.invoke('analyze-response', {
+          body: {
+            couplesMode: true,
+            cardId: card.id,
+            questionText: card.text,
+            deckId: card.deckId,
+            player1Response: getResponseText(player1Response),
+            player2Response: getResponseText(player2Response),
+            player1Name: player1Response.playerName,
+            player2Name: player2Response.playerName,
+          }
+        });
+
+        if (error) throw error;
+        setSynopsis(data.analysis);
+      } catch (error) {
+        console.error('Couples analysis error:', error);
+      } finally {
+        setIsAnalyzing(false);
       }
+    };
 
-      const { data, error } = await supabase.functions.invoke('analyze-response', {
-        body: {
-          couplesMode: true,
-          cardId: card.id,
-          questionText: card.text,
-          deckId: card.deckId,
-          player1Response: getResponseText(player1Response),
-          player2Response: getResponseText(player2Response),
-          player1Name: player1Response.playerName,
-          player2Name: player2Response.playerName,
-        }
-      });
-
-      if (error) throw error;
-
-      setAnalysisResult({
-        text: data.analysis,
-        sentiment: data.sentiment,
-        themes: data.keyThemes,
-      });
-      setShowAnalysis(true);
-    } catch (error) {
-      console.error('Couples analysis error:', error);
-      toast.error('Failed to analyze responses');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+    fetchInsights();
+  }, [card.id]);
 
   return (
     <>
@@ -121,48 +114,34 @@ const RoundComparison = ({ card, player1Response, player2Response, onContinue }:
             </div>
           )}
 
-          {/* Action buttons */}
-          <div className="flex flex-col gap-3 w-full">
-            <Button
-              onClick={handleGetInsights}
-              disabled={isAnalyzing}
-              variant="outline"
-              size="lg"
-              className="h-12 w-full border-crimson-vivid/30 hover:bg-crimson-vivid/10 text-foreground"
-            >
-              {isAnalyzing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analyzing both answers...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2 text-crimson-glow" />
-                  Get AI Insights
-                </>
-              )}
-            </Button>
-
-            <Button
-              onClick={onContinue}
-              size="lg"
-              className="h-14 px-8 text-lg bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid btn-glow group"
-            >
-              Next Card
-              <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
+          {/* AI Synopsis */}
+          <div className="w-full glass rounded-xl border border-border/50 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="w-4 h-4 text-crimson-glow" />
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">AI Insights</span>
+            </div>
+            {isAnalyzing ? (
+              <div className="flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Analyzing both answers...
+              </div>
+            ) : synopsis ? (
+              <p className="text-sm text-foreground leading-relaxed">{synopsis}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">Could not generate insights.</p>
+            )}
           </div>
+
+          <Button
+            onClick={onContinue}
+            size="lg"
+            className="h-14 px-8 text-lg w-full bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid btn-glow group"
+          >
+            Next Card
+            <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+          </Button>
         </div>
       </div>
-
-      <AIAnalysisDialog
-        open={showAnalysis}
-        onOpenChange={setShowAnalysis}
-        analysis={analysisResult?.text || ''}
-        question={card.text}
-        sentiment={analysisResult?.sentiment}
-        keyThemes={analysisResult?.themes}
-      />
     </>
   );
 };
