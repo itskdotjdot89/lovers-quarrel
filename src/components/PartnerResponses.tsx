@@ -2,12 +2,10 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Mic, Type, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import TypingIndicator from './TypingIndicator';
-import AIAnalysisDialog from './AIAnalysisDialog';
 import { Card as CardType } from '@/types/game';
 
 interface Response {
@@ -36,8 +34,7 @@ interface PartnerResponsesProps {
 const PartnerResponses = ({ sessionId, cardId, responses, participants, presences, card }: PartnerResponsesProps) => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [showAnalysis, setShowAnalysis] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<{ text: string; sentiment: string; themes: string[] } | null>(null);
+  const [synopsis, setSynopsis] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -57,42 +54,46 @@ const PartnerResponses = ({ sessionId, cardId, responses, participants, presence
   const filteredResponses = responses.filter(r => r.user_id !== currentUserId);
   const myResponses = responses.filter(r => r.user_id === currentUserId);
 
-  const handleGetInsights = async () => {
-    if (!card || myResponses.length === 0 || filteredResponses.length === 0) return;
-    setIsAnalyzing(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error('Please sign in to get AI insights'); return; }
-
-      const myName = getParticipantName(user.id);
-      const partnerName = getParticipantName(filteredResponses[0].user_id);
-      const myText = myResponses[0].response_text || myResponses[0].choice || '';
-      const partnerText = filteredResponses[0].response_text || filteredResponses[0].choice || '';
-
-      const { data, error } = await supabase.functions.invoke('analyze-response', {
-        body: {
-          couplesMode: true,
-          cardId: card.id,
-          questionText: card.text,
-          deckId: card.deckId,
-          player1Response: myText,
-          player2Response: partnerText,
-          player1Name: myName,
-          player2Name: partnerName,
-        }
-      });
-      if (error) throw error;
-      setAnalysisResult({ text: data.analysis, sentiment: data.sentiment, themes: data.keyThemes });
-      setShowAnalysis(true);
-    } catch (error) {
-      console.error('Couples analysis error:', error);
-      toast.error('Failed to analyze responses');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
   const canAnalyze = card && myResponses.length > 0 && filteredResponses.length > 0;
+
+  // Auto-trigger analysis when both players have responded
+  useEffect(() => {
+    if (!canAnalyze || synopsis || isAnalyzing) return;
+
+    const fetchInsights = async () => {
+      setIsAnalyzing(true);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const myName = getParticipantName(user.id);
+        const partnerName = getParticipantName(filteredResponses[0].user_id);
+        const myText = myResponses[0].response_text || myResponses[0].choice || '';
+        const partnerText = filteredResponses[0].response_text || filteredResponses[0].choice || '';
+
+        const { data, error } = await supabase.functions.invoke('analyze-response', {
+          body: {
+            couplesMode: true,
+            cardId: card!.id,
+            questionText: card!.text,
+            deckId: card!.deckId,
+            player1Response: myText,
+            player2Response: partnerText,
+            player1Name: myName,
+            player2Name: partnerName,
+          }
+        });
+        if (error) throw error;
+        setSynopsis(data.analysis);
+      } catch (error) {
+        console.error('Couples analysis error:', error);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    };
+
+    fetchInsights();
+  }, [canAnalyze, card?.id]);
 
   // Get partner's current status from presences
   const partnerPresence = Object.values(presences)
@@ -165,34 +166,23 @@ const PartnerResponses = ({ sessionId, cardId, responses, participants, presence
       })}
 
       {canAnalyze && (
-        <Button
-          onClick={handleGetInsights}
-          disabled={isAnalyzing}
-          variant="outline"
-          className="w-full border-crimson-vivid/30 hover:bg-crimson-vivid/10 text-foreground"
-        >
+        <Card className="p-4 bg-muted/10 border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-4 h-4 text-crimson-glow" />
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">AI Insights</span>
+          </div>
           {isAnalyzing ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
               Analyzing both answers...
-            </>
+            </div>
+          ) : synopsis ? (
+            <p className="text-sm text-foreground leading-relaxed">{synopsis}</p>
           ) : (
-            <>
-              <Sparkles className="w-4 h-4 mr-2 text-crimson-glow" />
-              Get AI Insights
-            </>
+            <p className="text-sm text-muted-foreground">Could not generate insights.</p>
           )}
-        </Button>
+        </Card>
       )}
-
-      <AIAnalysisDialog
-        open={showAnalysis}
-        onOpenChange={setShowAnalysis}
-        analysis={analysisResult?.text || ''}
-        question={card?.text}
-        sentiment={analysisResult?.sentiment}
-        keyThemes={analysisResult?.themes}
-      />
     </div>
   );
 };
