@@ -183,7 +183,7 @@ export const restorePurchases = async (): Promise<CustomerInfo | null> => {
 /**
  * Login user to RevenueCat (associates purchases with user ID)
  */
-export const loginRevenueCat = async (userId: string): Promise<void> => {
+export const loginRevenueCat = async (userId: string, displayName?: string, email?: string): Promise<void> => {
   if (!Capacitor.isNativePlatform()) return;
   
   if (!isInitialized) {
@@ -194,6 +194,16 @@ export const loginRevenueCat = async (userId: string): Promise<void> => {
   try {
     await Purchases.logIn({ appUserID: userId });
     console.log('[RevenueCat] Logged in with user ID:', userId);
+
+    // Sync subscriber attributes
+    if (displayName) {
+      await Purchases.setDisplayName({ displayName });
+      console.log('[RevenueCat] Set display name:', displayName);
+    }
+    if (email) {
+      await Purchases.setEmail({ email });
+      console.log('[RevenueCat] Set email:', email);
+    }
   } catch (error) {
     console.error('[RevenueCat] Login error:', error);
   }

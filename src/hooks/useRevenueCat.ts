@@ -71,7 +71,17 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
       setIsInitialized(initialized);
 
       if (initialized && user?.id) {
-        await loginRevenueCat(user.id);
+        // Fetch profile display name
+        let displayName: string | undefined;
+        if (user.id) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('display_name')
+            .eq('id', user.id)
+            .single();
+          displayName = profile?.display_name || undefined;
+        }
+        await loginRevenueCat(user.id, displayName, user.email);
       }
 
       if (initialized) {
