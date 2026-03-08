@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Users, Loader2, ChevronRight, Sparkles, SkipForward } from 'lucide-react';
+import { transformCardForSolo } from '@/lib/soloTextTransform';
 import PassThePhone from '@/components/PassThePhone';
 import RoundComparison from '@/components/RoundComparison';
 import GameCard from '@/components/GameCard';
