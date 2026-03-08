@@ -31,6 +31,12 @@ const GameCard = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
+  // Reset say-it input when card changes
+  useEffect(() => {
+    setShowSayItInput(false);
+    setSayItText('');
+  }, [card.id]);
+
   const handleSayItClick = () => {
     setShowSayItInput(true);
   };
