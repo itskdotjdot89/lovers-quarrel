@@ -99,9 +99,14 @@
     @apply border-border;
   }
 
+  html {
+    background: hsl(240 10% 4%);
+  }
+  
   body {
     @apply bg-background text-foreground font-[Inter] antialiased;
     -webkit-tap-highlight-color: transparent;
+    background: hsl(240 10% 4%);
   }
   
   h1, h2, h3 {
