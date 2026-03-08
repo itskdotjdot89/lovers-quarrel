@@ -99,9 +99,19 @@
     @apply border-border;
   }
 
+  html {
+    background-color: hsl(240 10% 4%);
+    background-image: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(355 85% 55% / 0.15), transparent);
+  }
+
   body {
     @apply bg-background text-foreground font-[Inter] antialiased;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    overflow: hidden;
+    height: 100%;
   }
   
   h1, h2, h3 {
