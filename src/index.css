@@ -99,27 +99,8 @@
     @apply border-border;
   }
 
-  html, body {
-    min-height: 100%;
-    min-height: 100dvh;
-    margin: 0;
-    padding: 0;
-    background-color: #0b0b12;
-    background-image: radial-gradient(circle at center, #2b0000 0%, #0b0b12 70%);
-    overflow: hidden;
-  }
-
-  #root {
-    min-height: 100%;
-    min-height: 100dvh;
-    margin: 0;
-    padding: 0;
-    background: transparent;
-    overflow: hidden;
-  }
-  
   body {
-    @apply text-foreground font-[Inter] antialiased;
+    @apply bg-background text-foreground font-[Inter] antialiased;
     -webkit-tap-highlight-color: transparent;
   }
   
