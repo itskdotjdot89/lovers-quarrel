@@ -37,14 +37,14 @@ const Home = () => {
   }, [searchParams, toast, checkSubscription]);
 
   return (
-    <div className="h-[100dvh] bg-gradient-game p-4 flex flex-col overflow-hidden">
+    <div className="h-[100dvh] bg-gradient-game flex flex-col overflow-hidden" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}>
       {/* Background effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-crimson-vivid/8 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-0 w-[400px] h-[400px] bg-purple/5 rounded-full blur-3xl" />
       </div>
       
-      <div className="relative max-w-2xl mx-auto w-full flex-1 flex flex-col min-h-0">
+      <div className="relative max-w-2xl mx-auto w-full flex-1 flex flex-col min-h-0 px-4">
         {/* Header */}
         <div className="text-center py-8 relative">
           <Button
