@@ -68,7 +68,7 @@ const RoundComparison = ({ card, player1Response, player2Response, onContinue }:
     };
 
     fetchInsights();
-  }, [card.id]);
+  }, [card.id, player1Response.choice, player1Response.responseText, player2Response.choice, player2Response.responseText]);
 
   return (
     <>
