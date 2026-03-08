@@ -50,6 +50,7 @@ const Gameplay = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [pendingChoice, setPendingChoice] = useState<{ choice: string; responseText: string; cardSubtype: string } | null>(null);
   const [isFlipping, setIsFlipping] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   
   const { shouldShowPaywall, recordCardView, cardsViewed, freeCardsRemaining, FREE_CARD_LIMIT } = useFreemiumLimit();
   const { isPremium } = useSubscription();
