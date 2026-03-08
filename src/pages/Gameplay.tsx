@@ -513,7 +513,7 @@ const Gameplay = () => {
           )}
           
           <GameCard 
-            card={currentCard} 
+            card={isSoloMode ? transformCardForSolo(currentCard) : currentCard} 
             isFavorite={favorites.includes(currentCard.id)}
             isFlipping={isFlipping}
             onFavorite={handleFavorite}
