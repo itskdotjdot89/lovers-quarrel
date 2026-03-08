@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { usePresence } from '@/hooks/usePresence';
 import { useFreemiumLimit } from '@/hooks/useFreemiumLimit';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 const Gameplay = () => {
   const navigate = useNavigate();
