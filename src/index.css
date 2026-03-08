@@ -99,14 +99,17 @@
     @apply border-border;
   }
 
-  html {
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
     background: hsl(240 10% 4%);
+    overflow: hidden;
   }
   
   body {
-    @apply bg-background text-foreground font-[Inter] antialiased;
+    @apply text-foreground font-[Inter] antialiased;
     -webkit-tap-highlight-color: transparent;
-    background: hsl(240 10% 4%);
   }
   
   h1, h2, h3 {
