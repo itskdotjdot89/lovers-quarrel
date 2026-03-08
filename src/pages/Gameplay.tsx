@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Users, Loader2, ChevronRight, Sparkles, SkipForward } from 'lucide-react';
@@ -11,6 +11,16 @@ import MultiplayerResponseInput from '@/components/MultiplayerResponseInput';
 import OpenEndedInput from '@/components/OpenEndedInput';
 import PartnerResponses from '@/components/PartnerResponses';
 import PaywallOverlay from '@/components/PaywallOverlay';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Card as CardType } from '@/types/game';
 import { loadFavorites, saveFavorites, toggleFavorite, shuffleCards } from '@/lib/gameLogic';
 import { toast } from 'sonner';
@@ -40,6 +50,7 @@ const Gameplay = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [pendingChoice, setPendingChoice] = useState<{ choice: string; responseText: string; cardSubtype: string } | null>(null);
   const [isFlipping, setIsFlipping] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   
   const { shouldShowPaywall, recordCardView, cardsViewed, freeCardsRemaining, FREE_CARD_LIMIT } = useFreemiumLimit();
   const { isPremium } = useSubscription();
@@ -460,7 +471,7 @@ const Gameplay = () => {
         <div className="flex items-center justify-between mb-6">
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/')}
+            onClick={() => setShowExitConfirm(true)}
             className="text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -734,6 +745,24 @@ const Gameplay = () => {
           onContinue={handleComparisonContinue}
         />
       )}
+
+      {/* Exit confirmation dialog */}
+      <AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+        <AlertDialogContent className="bg-background border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Exit Game?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to leave? Your current progress will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Playing</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate('/')}>
+              Exit Game
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
