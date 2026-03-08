@@ -176,6 +176,8 @@ const Gameplay = () => {
     }
     
     const filteredCards = dbCards.filter(card => {
+      // Exclude say_sip_strip cards in solo mode
+      if (isSoloMode && card.subtype === 'say_sip_strip') return false;
       if (config.intensity === 'soft') return card.spice === 'soft';
       if (config.intensity === 'standard') return card.spice === 'soft' || card.spice === 'standard';
       return true;
