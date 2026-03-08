@@ -42,6 +42,7 @@ const Gameplay = () => {
   const [isFlipping, setIsFlipping] = useState(false);
   
   const { shouldShowPaywall, recordCardView, cardsViewed, freeCardsRemaining, FREE_CARD_LIMIT } = useFreemiumLimit();
+  const { isPremium } = useSubscription();
 
   // Couples local (one device) turn-taking state
   const configStr = localStorage.getItem('lq_session_config');
