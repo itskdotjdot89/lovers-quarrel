@@ -104,8 +104,8 @@
     min-height: 100dvh;
     margin: 0;
     padding: 0;
-    background-color: #0b0b12;
     background: radial-gradient(circle at center, #2b0000 0%, #0b0b12 70%);
+    background-color: #0b0b12;
     overflow-x: hidden;
   }
 
@@ -114,8 +114,8 @@
     min-height: 100dvh;
     margin: 0;
     padding: 0;
-    background-color: #0b0b12;
     background: radial-gradient(circle at center, #2b0000 0%, #0b0b12 70%);
+    background-color: #0b0b12;
     overflow-x: hidden;
   }
 
