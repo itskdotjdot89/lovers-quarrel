@@ -46,6 +46,7 @@ const Gameplay = () => {
   const configStr = localStorage.getItem('lq_session_config');
   const sessionConfig = configStr ? JSON.parse(configStr) : null;
   const isCouplesLocal = !sessionId && sessionConfig?.mode === 'couples_local';
+  const isSoloMode = !sessionId && !isCouplesLocal;
   const [playerNames] = useState<[string, string]>(() => {
     if (isCouplesLocal) {
       const names = sessionConfig?.playerNames;
