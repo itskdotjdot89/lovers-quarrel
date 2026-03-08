@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card as CardType } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { Heart, Sparkles, Mic, Square, Loader2, Send } from 'lucide-react';
