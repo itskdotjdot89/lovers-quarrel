@@ -129,7 +129,14 @@ const RoundComparison = ({ card, player1Response, player2Response, onContinue }:
             ) : synopsis ? (
               <p className="text-sm text-foreground leading-relaxed">{synopsis}</p>
             ) : (
-              <p className="text-sm text-muted-foreground">Could not generate insights.</p>
+              <div className="text-center py-2">
+                <p className="text-sm text-muted-foreground mb-2">
+                  🔒 Unlock AI-powered relationship insights with Premium
+                </p>
+                <p className="text-xs text-muted-foreground/70">
+                  See what your answers reveal about your connection — upgrade to get personalized analysis after every round.
+                </p>
+              </div>
             )}
           </div>
 
