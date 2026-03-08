@@ -11,6 +11,16 @@ import MultiplayerResponseInput from '@/components/MultiplayerResponseInput';
 import OpenEndedInput from '@/components/OpenEndedInput';
 import PartnerResponses from '@/components/PartnerResponses';
 import PaywallOverlay from '@/components/PaywallOverlay';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Card as CardType } from '@/types/game';
 import { loadFavorites, saveFavorites, toggleFavorite, shuffleCards } from '@/lib/gameLogic';
 import { toast } from 'sonner';
