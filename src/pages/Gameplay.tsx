@@ -482,7 +482,7 @@ const Gameplay = () => {
           {/* Card counter with free cards indicator */}
           <div className="flex items-center gap-2">
             {/* Free cards remaining indicator (solo mode, non-premium only) */}
-            {!sessionId && !shouldShowPaywall && freeCardsRemaining > 0 && freeCardsRemaining < FREE_CARD_LIMIT && (
+            {!sessionId && !isPremium && freeCardsRemaining > 0 && freeCardsRemaining < FREE_CARD_LIMIT && (
               <div className="glass px-3 py-2 rounded-full border border-primary/30 bg-primary/5">
                 <span className="text-xs font-medium text-primary">
                   {freeCardsRemaining} free left
