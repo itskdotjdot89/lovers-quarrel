@@ -701,6 +701,7 @@ const Gameplay = () => {
       {/* Round comparison overlay for couples local mode */}
       {showComparison && currentCard && (
         <RoundComparison
+          key={currentCard.id}
           card={currentCard}
           player1Response={{
             playerName: playerNames[0],
