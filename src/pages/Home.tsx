@@ -37,14 +37,14 @@ const Home = () => {
   }, [searchParams, toast, checkSubscription]);
 
   return (
-    <div className="min-h-screen bg-gradient-game p-4 flex flex-col">
+    <div className="h-[100dvh] bg-gradient-game p-4 flex flex-col overflow-hidden">
       {/* Background effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-crimson-vivid/8 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 right-0 w-[400px] h-[400px] bg-purple/5 rounded-full blur-3xl" />
       </div>
       
-      <div className="relative max-w-2xl mx-auto w-full flex-1 flex flex-col">
+      <div className="relative max-w-2xl mx-auto w-full flex-1 flex flex-col min-h-0">
         {/* Header */}
         <div className="text-center py-8 relative">
           <Button
@@ -70,7 +70,7 @@ const Home = () => {
         </div>
 
         {/* Main Menu */}
-        <div className="flex-1 flex flex-col justify-center space-y-5">
+        <div className="flex-1 flex flex-col justify-center space-y-4 min-h-0 overflow-y-auto">
           {/* Play Button - Hero CTA */}
           <button
             onClick={() => navigate('/decks')}
