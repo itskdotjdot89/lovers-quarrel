@@ -44,7 +44,7 @@ const Home = () => {
         <div className="absolute bottom-1/4 right-0 w-[400px] h-[400px] bg-purple/5 rounded-full blur-3xl" />
       </div>
       
-      <div className="relative max-w-2xl mx-auto w-full flex-1 flex flex-col">
+      <div className="relative max-w-2xl mx-auto w-full flex-1 flex flex-col min-h-0">
         {/* Header */}
         <div className="text-center py-8 relative">
           <Button
