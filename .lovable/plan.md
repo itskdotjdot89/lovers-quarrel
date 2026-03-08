@@ -1,31 +1,33 @@
 
 
-## Show Text Input When "Say It" Is Selected
+## Fix: AI Analysis Getting Stuck on Same Answer in Couples Mode
 
-**Problem**: On Say/Sip/Strip cards, selecting "Say it" immediately records the choice and advances. There's no place to type what you actually want to say -- the text box only appears later in the optional AI analysis prompt (solo mode only), and doesn't exist at all in couples mode.
+### Problem
+The `RoundComparison` component's `useEffect` that fetches the AI analysis only depends on `[card.id]`. The helper function `getResponseText` (which reads `player1Response` and `player2Response`) is called inside the effect but isn't listed as a dependency. This means if the component remounts or re-renders with different responses, the effect either doesn't re-fire or captures stale response data.
 
-**Solution**: When "Say it" is tapped, instead of immediately submitting, show a text input area directly on the card so the player can type (or voice-record) their response before advancing.
+Additionally, there's no `key` prop on the `<RoundComparison>` component in `Gameplay.tsx`, so React may reuse the same instance across rounds, keeping the old `synopsis` state.
 
----
+### Fix (2 files, ~3 lines changed)
 
-### How It Will Work
+**1. `src/pages/Gameplay.tsx`** — Add a `key` prop to force full remount each round:
+```tsx
+<RoundComparison
+  key={currentCard.id}
+  card={currentCard}
+  ...
+```
+This ensures React destroys and recreates the component (and its state) for each new card, triggering a fresh `useEffect` with the correct response data.
 
-1. Tapping "Say it" transitions the card into a "response mode" showing a text area with mic button
-2. Tapping "Sip it" or "Strip it" works as before (immediate action)
-3. After typing/recording, a "Submit" button sends the response and advances
+**2. `src/components/RoundComparison.tsx`** — Expand the `useEffect` dependency array to include the actual response values, as a safety net:
+```tsx
+useEffect(() => {
+  // ... fetchInsights
+}, [card.id, player1Response.choice, player1Response.responseText, player2Response.choice, player2Response.responseText]);
+```
+Also reset `synopsis` to `null` at the start of the effect so stale data doesn't linger if the effect re-runs.
 
-### Technical Changes
+### Why this works
+- The `key` prop guarantees a clean component instance per card — fresh state, fresh effect.
+- The expanded dependencies ensure that even if the same card ID appears, changed responses trigger a new analysis.
+- Resetting `synopsis` prevents showing a previous card's analysis while the new one loads.
 
-**GameCard.tsx**
-- Add state to track when "Say it" is selected: `showSayItInput`
-- When "Say it" is clicked, show a text area + mic button + submit button instead of immediately calling `onChoice`
-- Add new prop `onSayItSubmit` for submitting text along with the choice
-- "Sip it" and "Strip it" continue to call `onChoice` directly
-
-**Gameplay.tsx**
-- Handle the new `onSayItSubmit` callback from GameCard
-- Pass the typed text as `responseText` when storing the response (couples mode) or setting `pendingChoice` (solo mode)
-- Remove the duplicate "Say it" text input from the AI analysis prompt section (lines 700-733) since it will now live on the card itself
-- Clean up the `sayItResponse`, recording refs, and related state that move into GameCard
-
-This keeps the flow intuitive: tap "Say it" -> type/speak -> submit, all on the same card view.
