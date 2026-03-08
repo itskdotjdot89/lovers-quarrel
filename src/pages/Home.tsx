@@ -37,7 +37,7 @@ const Home = () => {
   }, [searchParams, toast, checkSubscription]);
 
   return (
-    <div className="h-[100dvh] bg-gradient-game px-4 flex flex-col overflow-hidden" style={{ paddingTop: 'env(safe-area-inset-top, 16px)', paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
+    <div className="h-[100dvh] bg-gradient-game px-4 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] flex flex-col overflow-hidden">
       {/* Background effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-crimson-vivid/8 rounded-full blur-3xl" />
