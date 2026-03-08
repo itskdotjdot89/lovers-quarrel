@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { usePresence } from '@/hooks/usePresence';
 import { useFreemiumLimit } from '@/hooks/useFreemiumLimit';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 
 const Gameplay = () => {
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ const Gameplay = () => {
   const [isFlipping, setIsFlipping] = useState(false);
   
   const { shouldShowPaywall, recordCardView, cardsViewed, freeCardsRemaining, FREE_CARD_LIMIT } = useFreemiumLimit();
+  const { isPremium } = useSubscription();
 
   // Couples local (one device) turn-taking state
   const configStr = localStorage.getItem('lq_session_config');
@@ -480,7 +482,7 @@ const Gameplay = () => {
           {/* Card counter with free cards indicator */}
           <div className="flex items-center gap-2">
             {/* Free cards remaining indicator (solo mode, non-premium only) */}
-            {!sessionId && freeCardsRemaining > 0 && freeCardsRemaining <= FREE_CARD_LIMIT && (
+            {!sessionId && !isPremium && freeCardsRemaining > 0 && freeCardsRemaining < FREE_CARD_LIMIT && (
               <div className="glass px-3 py-2 rounded-full border border-primary/30 bg-primary/5">
                 <span className="text-xs font-medium text-primary">
                   {freeCardsRemaining} free left
