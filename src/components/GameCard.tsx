@@ -38,6 +38,7 @@ const GameCard = ({
   }, [card.id]);
 
   const handleSayItClick = () => {
+    console.log('[GameCard] Say it clicked, showing input');
     setShowSayItInput(true);
   };
 
