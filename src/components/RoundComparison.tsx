@@ -135,9 +135,17 @@ const RoundComparison = ({ card, player1Response, player2Response, onContinue }:
                 <p className="text-sm text-muted-foreground mb-2">
                   🔒 Unlock AI-powered relationship insights with Premium
                 </p>
-                <p className="text-xs text-muted-foreground/70">
+                <p className="text-xs text-muted-foreground/70 mb-3">
                   See what your answers reveal about your connection — upgrade to get personalized analysis after every round.
                 </p>
+                <Button
+                  onClick={() => navigate('/pricing')}
+                  size="sm"
+                  className="bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid"
+                >
+                  <Crown className="w-4 h-4 mr-1" />
+                  Go Premium
+                </Button>
               </div>
             )}
           </div>
