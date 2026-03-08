@@ -70,7 +70,7 @@ const Home = () => {
         </div>
 
         {/* Main Menu */}
-        <div className="flex-1 flex flex-col justify-center space-y-5">
+        <div className="flex-1 flex flex-col justify-center space-y-4 min-h-0 overflow-y-auto">
           {/* Play Button - Hero CTA */}
           <button
             onClick={() => navigate('/decks')}
