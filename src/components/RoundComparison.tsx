@@ -21,6 +21,7 @@ interface RoundComparisonProps {
 }
 
 const RoundComparison = ({ card, player1Response, player2Response, onContinue }: RoundComparisonProps) => {
+  const navigate = useNavigate();
   const isSameChoice = player1Response.choice === player2Response.choice;
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [synopsis, setSynopsis] = useState<string | null>(null);
