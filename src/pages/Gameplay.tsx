@@ -745,6 +745,24 @@ const Gameplay = () => {
           onContinue={handleComparisonContinue}
         />
       )}
+
+      {/* Exit confirmation dialog */}
+      <AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+        <AlertDialogContent className="bg-background border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Exit Game?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to leave? Your current progress will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Playing</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate('/')}>
+              Exit Game
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
