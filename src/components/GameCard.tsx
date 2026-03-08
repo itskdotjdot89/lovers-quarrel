@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card as CardType } from '@/types/game';
 import { Button } from '@/components/ui/button';
 import { Heart, Sparkles, Mic, Square, Loader2, Send } from 'lucide-react';
@@ -31,7 +31,14 @@ const GameCard = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
+  // Reset say-it input when card changes
+  useEffect(() => {
+    setShowSayItInput(false);
+    setSayItText('');
+  }, [card.id]);
+
   const handleSayItClick = () => {
+    console.log('[GameCard] Say it clicked, showing input');
     setShowSayItInput(true);
   };
 

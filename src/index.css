@@ -20,7 +20,13 @@
 
 .card-flip-front,
 .card-flip-back {
+  -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
+}
+
+.card-flip-front {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 .card-flip-back {
