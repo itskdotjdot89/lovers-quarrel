@@ -39,6 +39,7 @@ const RoundComparison = ({ card, player1Response, player2Response, onContinue }:
   // Auto-trigger analysis when component mounts
   useEffect(() => {
     const fetchInsights = async () => {
+      setSynopsis(null);
       setIsAnalyzing(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
