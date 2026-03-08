@@ -141,7 +141,7 @@ const RoundComparison = ({ card, player1Response, player2Response, onContinue }:
                 <Button
                   onClick={() => navigate('/pricing')}
                   size="sm"
-                  className="bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid"
+                  className="bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite] shadow-[0_0_15px_hsl(var(--crimson-vivid)/0.4)]"
                 >
                   <Crown className="w-4 h-4 mr-1" />
                   Go Premium
