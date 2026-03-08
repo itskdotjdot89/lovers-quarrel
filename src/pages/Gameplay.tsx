@@ -661,11 +661,25 @@ const Gameplay = () => {
             </div>
           )}
           
-          {/* Next button */}
-          <div className="mt-8">
+          {/* Next / Skip buttons */}
+          <div className="mt-8 flex items-center gap-3">
+            <Button 
+              onClick={() => {
+                // Skip: clear any pending state and advance
+                setPendingChoice(null);
+                handleNext();
+              }} 
+              disabled={sessionId ? !isHost : false}
+              variant="outline"
+              size="lg"
+              className="h-14 px-6 text-lg border-border/50 hover:border-muted-foreground/50 text-muted-foreground hover:text-foreground group"
+            >
+              <SkipForward className="w-5 h-5 mr-2 group-hover:translate-x-0.5 transition-transform" />
+              Skip
+            </Button>
             <Button 
               onClick={() => handleNext()} 
-              disabled={sessionId && !isHost}
+              disabled={sessionId ? !isHost : false}
               size="lg"
               className="h-14 px-8 text-lg bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid btn-glow group"
             >
