@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Heart, Sparkles, Loader2 } from 'lucide-react';
+import { ChevronRight, Heart, Sparkles, Loader2, Crown } from 'lucide-react';
 import { Card as CardType } from '@/types/game';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
