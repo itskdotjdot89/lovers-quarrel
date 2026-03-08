@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Users, Loader2, ChevronRight, Sparkles, SkipForward } from 'lucide-react';
+import { transformCardForSolo } from '@/lib/soloTextTransform';
 import PassThePhone from '@/components/PassThePhone';
 import RoundComparison from '@/components/RoundComparison';
 import GameCard from '@/components/GameCard';
@@ -45,6 +46,7 @@ const Gameplay = () => {
   const configStr = localStorage.getItem('lq_session_config');
   const sessionConfig = configStr ? JSON.parse(configStr) : null;
   const isCouplesLocal = !sessionId && sessionConfig?.mode === 'couples_local';
+  const isSoloMode = !sessionId && !isCouplesLocal;
   const [playerNames] = useState<[string, string]>(() => {
     if (isCouplesLocal) {
       const names = sessionConfig?.playerNames;
@@ -512,7 +514,7 @@ const Gameplay = () => {
           )}
           
           <GameCard 
-            card={currentCard} 
+            card={isSoloMode ? transformCardForSolo(currentCard) : currentCard} 
             isFavorite={favorites.includes(currentCard.id)}
             isFlipping={isFlipping}
             onFavorite={handleFavorite}
