@@ -50,29 +50,31 @@ const GameCard = ({
     setSayItText('');
   };
 
+  const hasMic = isMicrophoneAvailable();
+
   const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      chunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunksRef.current.push(event.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        stream.getTracks().forEach(track => track.stop());
-        await transcribeAudio(audioBlob);
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (error) {
-      console.error('Error accessing microphone:', error);
-      toast.error('Could not access microphone');
+    const stream = await requestMicrophoneAccess();
+    if (!stream) {
+      toast.error('Microphone is not available on this device');
+      return;
     }
+
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+    chunksRef.current = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunksRef.current.push(event.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      stream.getTracks().forEach(track => track.stop());
+      await transcribeAudio(audioBlob);
+    };
+
+    mediaRecorder.start();
+    setIsRecording(true);
   };
 
   const stopRecording = () => {
