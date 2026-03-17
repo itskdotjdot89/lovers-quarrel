@@ -155,22 +155,24 @@ const GameCard = ({
                     disabled={isRecording || isTranscribing}
                     autoFocus
                   />
-                  <Button
-                    type="button"
-                    onClick={isRecording ? stopRecording : startRecording}
-                    variant={isRecording ? "destructive" : "ghost"}
-                    size="icon"
-                    className="absolute bottom-2 right-2 h-10 w-10 rounded-full"
-                    disabled={isTranscribing}
-                  >
-                    {isTranscribing ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : isRecording ? (
-                      <Square className="w-5 h-5" />
-                    ) : (
-                      <Mic className="w-5 h-5" />
-                    )}
-                  </Button>
+                  {hasMic && (
+                    <Button
+                      type="button"
+                      onClick={isRecording ? stopRecording : startRecording}
+                      variant={isRecording ? "destructive" : "ghost"}
+                      size="icon"
+                      className="absolute bottom-2 right-2 h-10 w-10 rounded-full"
+                      disabled={isTranscribing}
+                    >
+                      {isTranscribing ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : isRecording ? (
+                        <Square className="w-5 h-5" />
+                      ) : (
+                        <Mic className="w-5 h-5" />
+                      )}
+                    </Button>
+                  )}
                 </div>
                 {isRecording && (
                   <p className="text-xs text-crimson-glow animate-pulse text-center">Recording... tap to stop</p>

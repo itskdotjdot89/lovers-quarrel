@@ -182,22 +182,24 @@ const OpenEndedInput = ({ cardId, questionText, deckId, onAnalysisComplete, coup
           className="min-h-[100px] pr-14 font-ui text-sm resize-none bg-background/50 border-secondary/30 focus:border-secondary"
           disabled={isLoading}
         />
-        <Button
-          type="button"
-          onClick={isRecording ? stopRecording : startRecording}
-          variant={isRecording ? "destructive" : "ghost"}
-          size="icon"
-          className="absolute bottom-2 right-2 h-10 w-10 rounded-full"
-          disabled={isAnalyzing || isTranscribing}
-        >
-          {isTranscribing ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : isRecording ? (
-            <Square className="w-5 h-5" />
-          ) : (
-            <Mic className="w-5 h-5" />
-          )}
-        </Button>
+        {hasMic && (
+          <Button
+            type="button"
+            onClick={isRecording ? stopRecording : startRecording}
+            variant={isRecording ? "destructive" : "ghost"}
+            size="icon"
+            className="absolute bottom-2 right-2 h-10 w-10 rounded-full"
+            disabled={isAnalyzing || isTranscribing}
+          >
+            {isTranscribing ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : isRecording ? (
+              <Square className="w-5 h-5" />
+            ) : (
+              <Mic className="w-5 h-5" />
+            )}
+          </Button>
+        )}
       </div>
       
       {isRecording && (

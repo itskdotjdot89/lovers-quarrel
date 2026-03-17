@@ -49,6 +49,8 @@ const SimpleAudioRecorder = ({ onRecordingComplete, onRecordingStart, onRecordin
     }
   };
 
+  if (!hasMic) return null;
+
   return (
     <Button
       type="button"

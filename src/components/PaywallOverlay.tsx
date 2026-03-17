@@ -75,12 +75,12 @@ const PaywallOverlay = ({ onClose, cardsViewed }: PaywallOverlayProps) => {
           className="w-full h-14 text-lg bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid btn-glow"
         >
           <Crown className="w-5 h-5 mr-2" />
-          Start 7-Day Free Trial
+          Try Free, then $4.99/month
         </Button>
         
-        {/* Trial info */}
+        {/* Subscription disclosure */}
         <p className="text-center text-xs text-muted-foreground mt-4">
-          No charge until trial ends. Cancel anytime.
+          Subscription required. $4.99/month after 7-day free trial. Cancel anytime.
         </p>
       </div>
     </div>
