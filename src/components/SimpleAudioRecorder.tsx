@@ -14,32 +14,32 @@ const SimpleAudioRecorder = ({ onRecordingComplete, onRecordingStart, onRecordin
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
+  const hasMic = isMicrophoneAvailable();
+
   const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      chunksRef.current = [];
+    const stream = await requestMicrophoneAccess();
+    if (!stream) return;
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
-        }
-      };
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+    chunksRef.current = [];
 
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        onRecordingComplete(audioBlob);
-        stream.getTracks().forEach(track => track.stop());
-        onRecordingStop?.();
-      };
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        chunksRef.current.push(event.data);
+      }
+    };
 
-      mediaRecorder.start();
-      setIsRecording(true);
-      onRecordingStart?.();
-    } catch (error) {
-      console.error('Error accessing microphone:', error);
-    }
+    mediaRecorder.onstop = () => {
+      const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      onRecordingComplete(audioBlob);
+      stream.getTracks().forEach(track => track.stop());
+      onRecordingStop?.();
+    };
+
+    mediaRecorder.start();
+    setIsRecording(true);
+    onRecordingStart?.();
   };
 
   const stopRecording = () => {
