@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { DeckMood } from '@/types/game';
 import { loadAnalysisConfig, AnalysisDepth } from '@/lib/aiAnalysisConfig';
+import { isMicrophoneAvailable, requestMicrophoneAccess } from '@/lib/microphoneUtils';
 
 interface OpenEndedInputProps {
   cardId: string;
