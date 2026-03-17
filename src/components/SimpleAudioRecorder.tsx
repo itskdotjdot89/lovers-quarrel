@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Mic, Square } from 'lucide-react';
+import { isMicrophoneAvailable, requestMicrophoneAccess } from '@/lib/microphoneUtils';
 
 interface SimpleAudioRecorderProps {
   onRecordingComplete: (audioBlob: Blob) => void;
