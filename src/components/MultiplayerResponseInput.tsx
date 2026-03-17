@@ -20,7 +20,7 @@ const MultiplayerResponseInput = ({ sessionId, cardId, onResponseSubmitted, onSt
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const { toast } = useToast();
-  const typingTimeoutRef = useRef<NodeJS.Timeout>();
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     return () => {
