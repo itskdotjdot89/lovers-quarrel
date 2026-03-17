@@ -5,6 +5,7 @@ import { Heart, Sparkles, Mic, Square, Loader2, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { isMicrophoneAvailable, requestMicrophoneAccess } from '@/lib/microphoneUtils';
 
 interface GameCardProps {
   card: CardType;
@@ -49,29 +50,31 @@ const GameCard = ({
     setSayItText('');
   };
 
+  const hasMic = isMicrophoneAvailable();
+
   const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      chunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) chunksRef.current.push(event.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        stream.getTracks().forEach(track => track.stop());
-        await transcribeAudio(audioBlob);
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (error) {
-      console.error('Error accessing microphone:', error);
-      toast.error('Could not access microphone');
+    const stream = await requestMicrophoneAccess();
+    if (!stream) {
+      toast.error('Microphone is not available on this device');
+      return;
     }
+
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+    chunksRef.current = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunksRef.current.push(event.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      stream.getTracks().forEach(track => track.stop());
+      await transcribeAudio(audioBlob);
+    };
+
+    mediaRecorder.start();
+    setIsRecording(true);
   };
 
   const stopRecording = () => {
@@ -152,22 +155,24 @@ const GameCard = ({
                     disabled={isRecording || isTranscribing}
                     autoFocus
                   />
-                  <Button
-                    type="button"
-                    onClick={isRecording ? stopRecording : startRecording}
-                    variant={isRecording ? "destructive" : "ghost"}
-                    size="icon"
-                    className="absolute bottom-2 right-2 h-10 w-10 rounded-full"
-                    disabled={isTranscribing}
-                  >
-                    {isTranscribing ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : isRecording ? (
-                      <Square className="w-5 h-5" />
-                    ) : (
-                      <Mic className="w-5 h-5" />
-                    )}
-                  </Button>
+                  {hasMic && (
+                    <Button
+                      type="button"
+                      onClick={isRecording ? stopRecording : startRecording}
+                      variant={isRecording ? "destructive" : "ghost"}
+                      size="icon"
+                      className="absolute bottom-2 right-2 h-10 w-10 rounded-full"
+                      disabled={isTranscribing}
+                    >
+                      {isTranscribing ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : isRecording ? (
+                        <Square className="w-5 h-5" />
+                      ) : (
+                        <Mic className="w-5 h-5" />
+                      )}
+                    </Button>
+                  )}
                 </div>
                 {isRecording && (
                   <p className="text-xs text-crimson-glow animate-pulse text-center">Recording... tap to stop</p>

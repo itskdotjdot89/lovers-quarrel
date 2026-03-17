@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { DeckMood } from '@/types/game';
 import { loadAnalysisConfig, AnalysisDepth } from '@/lib/aiAnalysisConfig';
+import { isMicrophoneAvailable, requestMicrophoneAccess } from '@/lib/microphoneUtils';
 
 interface OpenEndedInputProps {
   cardId: string;
@@ -24,31 +25,33 @@ const OpenEndedInput = ({ cardId, questionText, deckId, onAnalysisComplete, coup
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
+  const hasMic = isMicrophoneAvailable();
+
   const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      chunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        stream.getTracks().forEach(track => track.stop());
-        await transcribeAudio(audioBlob);
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (error) {
-      console.error('Error accessing microphone:', error);
-      toast.error('Could not access microphone');
+    const stream = await requestMicrophoneAccess();
+    if (!stream) {
+      toast.error('Microphone is not available on this device');
+      return;
     }
+
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+    chunksRef.current = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        chunksRef.current.push(event.data);
+      }
+    };
+
+    mediaRecorder.onstop = async () => {
+      const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      stream.getTracks().forEach(track => track.stop());
+      await transcribeAudio(audioBlob);
+    };
+
+    mediaRecorder.start();
+    setIsRecording(true);
   };
 
   const stopRecording = () => {
@@ -179,22 +182,24 @@ const OpenEndedInput = ({ cardId, questionText, deckId, onAnalysisComplete, coup
           className="min-h-[100px] pr-14 font-ui text-sm resize-none bg-background/50 border-secondary/30 focus:border-secondary"
           disabled={isLoading}
         />
-        <Button
-          type="button"
-          onClick={isRecording ? stopRecording : startRecording}
-          variant={isRecording ? "destructive" : "ghost"}
-          size="icon"
-          className="absolute bottom-2 right-2 h-10 w-10 rounded-full"
-          disabled={isAnalyzing || isTranscribing}
-        >
-          {isTranscribing ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : isRecording ? (
-            <Square className="w-5 h-5" />
-          ) : (
-            <Mic className="w-5 h-5" />
-          )}
-        </Button>
+        {hasMic && (
+          <Button
+            type="button"
+            onClick={isRecording ? stopRecording : startRecording}
+            variant={isRecording ? "destructive" : "ghost"}
+            size="icon"
+            className="absolute bottom-2 right-2 h-10 w-10 rounded-full"
+            disabled={isAnalyzing || isTranscribing}
+          >
+            {isTranscribing ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : isRecording ? (
+              <Square className="w-5 h-5" />
+            ) : (
+              <Mic className="w-5 h-5" />
+            )}
+          </Button>
+        )}
       </div>
       
       {isRecording && (
