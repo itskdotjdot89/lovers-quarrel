@@ -71,12 +71,21 @@ const WaitingRoom = ({ sessionCode, sessionId, isHost, onStart, onCancel }: Wait
     }
   };
 
-  const copyCode = () => {
-    navigator.clipboard.writeText(sessionCode);
+  const shareCode = () => {
+    const message = `I challenge you to a Lovers Quarrel! Are you in?\n\nJoin code: ${sessionCode}`;
+    const smsUrl = `sms:?&body=${encodeURIComponent(message)}`;
+    
+    // Try to open SMS on mobile, fall back to clipboard
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      window.open(smsUrl, '_blank');
+    } else {
+      navigator.clipboard.writeText(message);
+    }
+    
     setCopied(true);
     toast({
-      title: "Code Copied!",
-      description: "Share this code with your partner"
+      title: "Code Ready!",
+      description: "Share it with your partner"
     });
     setTimeout(() => setCopied(false), 2000);
   };
