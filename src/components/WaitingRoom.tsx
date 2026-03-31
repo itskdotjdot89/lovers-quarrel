@@ -71,12 +71,21 @@ const WaitingRoom = ({ sessionCode, sessionId, isHost, onStart, onCancel }: Wait
     }
   };
 
-  const copyCode = () => {
-    navigator.clipboard.writeText(sessionCode);
+  const shareCode = () => {
+    const message = `I challenge you to a Lovers Quarrel! Are you in?\n\nJoin code: ${sessionCode}`;
+    const smsUrl = `sms:?&body=${encodeURIComponent(message)}`;
+    
+    // Try to open SMS on mobile, fall back to clipboard
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      window.open(smsUrl, '_blank');
+    } else {
+      navigator.clipboard.writeText(message);
+    }
+    
     setCopied(true);
     toast({
-      title: "Code Copied!",
-      description: "Share this code with your partner"
+      title: "Code Ready!",
+      description: "Share it with your partner"
     });
     setTimeout(() => setCopied(false), 2000);
   };
@@ -98,10 +107,10 @@ const WaitingRoom = ({ sessionCode, sessionId, isHost, onStart, onCancel }: Wait
 
         <Card 
           className="p-6 bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
-          onClick={copyCode}
+          onClick={shareCode}
         >
           <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-2">Session Code (Click to Copy)</p>
+            <p className="text-sm text-muted-foreground mb-2">Session Code (Tap to Share)</p>
             <div className="flex items-center justify-center gap-2">
               <span className="text-3xl font-bold font-mono tracking-wider">{sessionCode}</span>
               <div className="h-8 w-8 flex items-center justify-center">
