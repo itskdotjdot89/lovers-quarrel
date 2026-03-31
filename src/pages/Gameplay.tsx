@@ -174,39 +174,20 @@ const Gameplay = () => {
     }
     const config = JSON.parse(configStr);
     
-    const { data: dbCards, error } = await supabase
-      .from('cards')
-      .select('*')
-      .in('deck_id', config.deckIds)
-      .eq('is_active', true);
-    
-    if (error || !dbCards || dbCards.length === 0) {
-      toast.error('Failed to load cards');
-      navigate('/decks');
-      return;
-    }
-    
-    const filteredCards = dbCards.filter(card => {
-      // Exclude say_sip_strip cards in solo mode
-      if (isSoloMode && card.subtype === 'say_sip_strip') return false;
+    // Use dedicated solo cards instead of database cards
+    const filteredCards = SOLO_CARDS.filter(card => {
       if (config.intensity === 'soft') return card.spice === 'soft';
       if (config.intensity === 'standard') return card.spice === 'soft' || card.spice === 'standard';
       return true;
     });
     
-    const mappedCards: CardType[] = filteredCards.map(card => ({
-      id: card.id,
-      deckId: card.deck_id as CardType['deckId'],
-      subtype: card.subtype as CardType['subtype'],
-      text: card.text,
-      choiceA: card.choice_a || undefined,
-      choiceB: card.choice_b || undefined,
-      spice: card.spice as CardType['spice'],
-      isActive: card.is_active,
-      createdAt: new Date(card.created_at).getTime()
-    }));
+    if (filteredCards.length === 0) {
+      toast.error('No cards available for this intensity');
+      navigate('/decks');
+      return;
+    }
     
-    const shuffled = shuffleCards(mappedCards);
+    const shuffled = shuffleCards(filteredCards);
     
     setCards(shuffled);
     cardsRef.current = shuffled;
