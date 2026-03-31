@@ -42,6 +42,12 @@ const PartnerResponses = ({ sessionId, cardId, responses, participants, presence
     });
   }, []);
 
+  // Reset analysis when card changes
+  useEffect(() => {
+    setSynopsis(null);
+    setIsAnalyzing(false);
+  }, [cardId]);
+
   const getParticipantName = (userId: string) => {
     const participant = participants.find(p => p.user_id === userId);
     return participant?.display_name || 'Player';
