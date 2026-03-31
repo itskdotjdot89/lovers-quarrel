@@ -107,10 +107,10 @@ const WaitingRoom = ({ sessionCode, sessionId, isHost, onStart, onCancel }: Wait
 
         <Card 
           className="p-6 bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
-          onClick={copyCode}
+          onClick={shareCode}
         >
           <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-2">Session Code (Click to Copy)</p>
+            <p className="text-sm text-muted-foreground mb-2">Session Code (Tap to Share)</p>
             <div className="flex items-center justify-center gap-2">
               <span className="text-3xl font-bold font-mono tracking-wider">{sessionCode}</span>
               <div className="h-8 w-8 flex items-center justify-center">
