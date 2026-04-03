@@ -173,13 +173,50 @@ const Gameplay = () => {
       return;
     }
     const config = JSON.parse(configStr);
+    const isLocal = config.mode === 'couples_local';
     
-    // Use dedicated solo cards instead of database cards
-    const filteredCards = SOLO_CARDS.filter(card => {
-      if (config.intensity === 'soft') return card.spice === 'soft';
-      if (config.intensity === 'standard') return card.spice === 'soft' || card.spice === 'standard';
-      return true;
-    });
+    let filteredCards: CardType[];
+    
+    if (isLocal) {
+      // Couples local: load full card set from database
+      const deckIds = config.deckIds || ['freaky', 'real_talk', 'love_drunk'];
+      const { data: dbCards, error } = await supabase
+        .from('cards')
+        .select('*')
+        .in('deck_id', deckIds)
+        .eq('is_active', true);
+      
+      if (error || !dbCards || dbCards.length === 0) {
+        toast.error('No cards available');
+        navigate('/decks');
+        return;
+      }
+      
+      const mapped: CardType[] = dbCards.map(card => ({
+        id: card.id,
+        deckId: card.deck_id as CardType['deckId'],
+        subtype: card.subtype as CardType['subtype'],
+        text: card.text,
+        choiceA: card.choice_a || undefined,
+        choiceB: card.choice_b || undefined,
+        spice: card.spice as CardType['spice'],
+        isActive: card.is_active,
+        createdAt: new Date(card.created_at).getTime()
+      }));
+      
+      filteredCards = mapped.filter(card => {
+        if (config.intensity === 'soft') return card.spice === 'soft';
+        if (config.intensity === 'standard') return card.spice === 'soft' || card.spice === 'standard';
+        return true;
+      });
+    } else {
+      // Solo mode: use dedicated solo cards
+      filteredCards = SOLO_CARDS.filter(card => {
+        if (config.intensity === 'soft') return card.spice === 'soft';
+        if (config.intensity === 'standard') return card.spice === 'soft' || card.spice === 'standard';
+        return true;
+      });
+    }
     
     if (filteredCards.length === 0) {
       toast.error('No cards available for this intensity');
