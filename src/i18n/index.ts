@@ -45,4 +45,6 @@ export const LANGUAGES = [
   { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
   { code: 'zh', label: '中文', flag: '🇨🇳' },
   { code: 'th', label: 'ไทย', flag: '🇹🇭' },
+  { code: 'ja', label: '日本語', flag: '🇯🇵' },
+  { code: 'ko', label: '한국어', flag: '🇰🇷' },
 ];
