@@ -8,6 +8,8 @@ import fr from './locales/fr.json';
 import de from './locales/de.json';
 import zh from './locales/zh.json';
 import th from './locales/th.json';
+import ja from './locales/ja.json';
+import ko from './locales/ko.json';
 
 i18n
   .use(LanguageDetector)
@@ -20,6 +22,8 @@ i18n
       de: { translation: de },
       zh: { translation: zh },
       th: { translation: th },
+      ja: { translation: ja },
+      ko: { translation: ko },
     },
     fallbackLng: 'en',
     interpolation: {
