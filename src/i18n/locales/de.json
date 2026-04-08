@@ -188,13 +188,16 @@
     "tryFree": "Gratis testen, dann 4,99 $/Monat",
     "disclosure": "Abo erforderlich. 4,99 $/Monat nach 7-tägiger Testphase. Jederzeit kündbar."
   },
+  "gameplay": {
+    "exit": "Verlassen", "exitTitle": "Spiel Verlassen?", "exitDesc": "Bist du sicher? Dein Fortschritt geht verloren.", "keepPlaying": "Weiterspielen", "exitGame": "Verlassen", "players": "{{count}} Spieler", "playerTurn": "{{name}} ist dran", "freeLeft": "{{count}} kostenlos übrig", "loadingCards": "Lade Karten...", "noCards": "Keine Karten", "chooseDecks": "Decks Wählen", "noMoreCards": "Keine weiteren Karten", "noCardsIntensity": "Keine Karten für diese Intensität", "analyzingResponse": "Analysiere...", "wantInsights": "Tiefere Einblicke?", "aiCanAnalyze": "KI kann analysieren", "skip": "Überspringen", "getAiInsights": "KI-Analyse", "nextCard": "Nächste Karte", "hostOnly": "Nur der Gastgeber kann fortfahren", "responseSubmitted": "Antwort eingereicht", "addedFavorites": "Zu Favoriten hinzugefügt", "removedFavorites": "Aus Favoriten entfernt", "signInForInsights": "Anmelden für KI-Einblicke", "failedAnalysis": "Analyse fehlgeschlagen"
+  },
+  "session": {
+    "back": "← Zurück", "createNew": "Neue Sitzung", "createNewDesc": "Starte eine Sitzung und lade deinen Partner ein", "createSession": "Erstellen", "creatingSession": "Wird erstellt...", "or": "Oder", "joinExisting": "Sitzung Beitreten", "joinExistingDesc": "6-stelligen Code eingeben", "enterCode": "Code (z.B. ABC123)", "joinSession": "Beitreten", "invalidCode": "Ungültiger Code", "invalidCodeDesc": "6-stelligen Code eingeben", "sessionNotFound": "Nicht gefunden", "sessionNotFoundDesc": "Code prüfen und erneut versuchen", "failedJoin": "Beitreten fehlgeschlagen", "failedLoadCards": "Laden fehlgeschlagen"
+  },
+  "waitingRoom": {
+    "title": "Warteraum", "shareCode": "Teile diesen Code", "waitingHost": "Warte auf Gastgeber...", "sessionCode": "Code (Tippen zum Teilen)", "codeReady": "Code Bereit!", "sharePartner": "Teile ihn", "participants": "Teilnehmer ({{count}}/2)", "waitingPartner": "Warte auf Partner...", "startGame": "Starten", "waitingForPartner": "Warte...", "cancel": "Abbrechen"
+  },
   "common": {
-    "error": "Fehler",
-    "loading": "Laden...",
-    "save": "Speichern",
-    "close": "Schließen",
-    "confirm": "Bestätigen",
-    "yes": "Ja",
-    "no": "Nein"
+    "error": "Fehler", "loading": "Laden...", "save": "Speichern", "close": "Schließen", "confirm": "Bestätigen", "yes": "Ja", "no": "Nein"
   }
 }

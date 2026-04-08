@@ -188,13 +188,16 @@
     "tryFree": "免费试用，之后$4.99/月",
     "disclosure": "需要订阅。7天免费试用后$4.99/月。随时取消。"
   },
+  "gameplay": {
+    "exit": "退出", "exitTitle": "退出游戏？", "exitDesc": "确定要离开吗？进度将丢失。", "keepPlaying": "继续游戏", "exitGame": "退出", "players": "{{count}}名玩家", "playerTurn": "{{name}}的回合", "freeLeft": "剩余{{count}}次免费", "loadingCards": "加载中...", "noCards": "没有卡片", "chooseDecks": "选择卡组", "noMoreCards": "没有更多卡片", "noCardsIntensity": "此强度没有卡片", "analyzingResponse": "分析中...", "wantInsights": "想要更深入？", "aiCanAnalyze": "AI可以分析你的选择", "skip": "跳过", "getAiInsights": "获取AI分析", "nextCard": "下一张", "hostOnly": "只有主持人能前进", "responseSubmitted": "已提交", "addedFavorites": "已收藏", "removedFavorites": "已取消收藏", "signInForInsights": "请登录获取AI分析", "failedAnalysis": "分析失败"
+  },
+  "session": {
+    "back": "← 返回", "createNew": "创建新会话", "createNewDesc": "开始会话并邀请伴侣", "createSession": "创建", "creatingSession": "创建中...", "or": "或", "joinExisting": "加入会话", "joinExistingDesc": "输入6位代码", "enterCode": "输入代码（如ABC123）", "joinSession": "加入", "invalidCode": "无效代码", "invalidCodeDesc": "请输入6位代码", "sessionNotFound": "未找到会话", "sessionNotFoundDesc": "请检查代码", "failedJoin": "加入失败", "failedLoadCards": "加载失败"
+  },
+  "waitingRoom": {
+    "title": "等候室", "shareCode": "与伴侣分享代码", "waitingHost": "等待主持人...", "sessionCode": "代码（点击分享）", "codeReady": "代码就绪！", "sharePartner": "分享给伴侣", "participants": "参与者（{{count}}/2）", "waitingPartner": "等待伴侣...", "startGame": "开始", "waitingForPartner": "等待中...", "cancel": "取消"
+  },
   "common": {
-    "error": "错误",
-    "loading": "加载中...",
-    "save": "保存",
-    "close": "关闭",
-    "confirm": "确认",
-    "yes": "是",
-    "no": "否"
+    "error": "错误", "loading": "加载中...", "save": "保存", "close": "关闭", "confirm": "确认", "yes": "是", "no": "否"
   }
 }
