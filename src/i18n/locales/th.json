@@ -188,13 +188,16 @@
     "tryFree": "ทดลองฟรี จากนั้น $4.99/เดือน",
     "disclosure": "ต้องสมัครสมาชิก $4.99/เดือน หลังทดลองใช้ฟรี 7 วัน ยกเลิกได้ทุกเมื่อ"
   },
+  "gameplay": {
+    "exit": "ออก", "exitTitle": "ออกจากเกม?", "exitDesc": "แน่ใจหรือไม่? ความคืบหน้าจะสูญหาย", "keepPlaying": "เล่นต่อ", "exitGame": "ออก", "players": "{{count}} ผู้เล่น", "playerTurn": "ตาของ {{name}}", "freeLeft": "เหลือฟรี {{count}}", "loadingCards": "กำลังโหลด...", "noCards": "ไม่มีการ์ด", "chooseDecks": "เลือกสำรับ", "noMoreCards": "ไม่มีการ์ดเพิ่ม", "noCardsIntensity": "ไม่มีการ์ดสำหรับความเข้มข้นนี้", "analyzingResponse": "กำลังวิเคราะห์...", "wantInsights": "ต้องการเชิงลึก?", "aiCanAnalyze": "AI วิเคราะห์ตัวเลือกของคุณได้", "skip": "ข้าม", "getAiInsights": "รับ AI วิเคราะห์", "nextCard": "การ์ดถัดไป", "hostOnly": "เฉพาะเจ้าของห้อง", "responseSubmitted": "ส่งแล้ว", "addedFavorites": "เพิ่มในโปรดแล้ว", "removedFavorites": "ลบจากโปรดแล้ว", "signInForInsights": "เข้าสู่ระบบเพื่อ AI วิเคราะห์", "failedAnalysis": "วิเคราะห์ล้มเหลว"
+  },
+  "session": {
+    "back": "← กลับ", "createNew": "สร้างเซสชันใหม่", "createNewDesc": "เริ่มเซสชันและเชิญคู่ของคุณ", "createSession": "สร้าง", "creatingSession": "กำลังสร้าง...", "or": "หรือ", "joinExisting": "เข้าร่วมเซสชัน", "joinExistingDesc": "ป้อนรหัส 6 ตัวอักษร", "enterCode": "ป้อนรหัส (เช่น ABC123)", "joinSession": "เข้าร่วม", "invalidCode": "รหัสไม่ถูกต้อง", "invalidCodeDesc": "ป้อนรหัส 6 ตัวอักษร", "sessionNotFound": "ไม่พบเซสชัน", "sessionNotFoundDesc": "ตรวจสอบรหัสแล้วลองอีกครั้ง", "failedJoin": "เข้าร่วมล้มเหลว", "failedLoadCards": "โหลดล้มเหลว"
+  },
+  "waitingRoom": {
+    "title": "ห้องรอ", "shareCode": "แชร์รหัสนี้", "waitingHost": "กำลังรอเจ้าของห้อง...", "sessionCode": "รหัส (แตะเพื่อแชร์)", "codeReady": "รหัสพร้อม!", "sharePartner": "แชร์ให้คู่ของคุณ", "participants": "ผู้เข้าร่วม ({{count}}/2)", "waitingPartner": "กำลังรอ...", "startGame": "เริ่มเกม", "waitingForPartner": "กำลังรอ...", "cancel": "ยกเลิก"
+  },
   "common": {
-    "error": "ข้อผิดพลาด",
-    "loading": "กำลังโหลด...",
-    "save": "บันทึก",
-    "close": "ปิด",
-    "confirm": "ยืนยัน",
-    "yes": "ใช่",
-    "no": "ไม่"
+    "error": "ข้อผิดพลาด", "loading": "กำลังโหลด...", "save": "บันทึก", "close": "ปิด", "confirm": "ยืนยัน", "yes": "ใช่", "no": "ไม่"
   }
 }

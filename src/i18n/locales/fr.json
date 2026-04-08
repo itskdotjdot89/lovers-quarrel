@@ -188,13 +188,16 @@
     "tryFree": "Essai Gratuit, puis 4,99 $/mois",
     "disclosure": "Abonnement requis. 4,99 $/mois après l'essai gratuit de 7 jours. Annulez à tout moment."
   },
+  "gameplay": {
+    "exit": "Quitter", "exitTitle": "Quitter le Jeu ?", "exitDesc": "Êtes-vous sûr ? Votre progression sera perdue.", "keepPlaying": "Continuer", "exitGame": "Quitter", "players": "{{count}} Joueurs", "playerTurn": "Tour de {{name}}", "freeLeft": "{{count}} gratuits restants", "loadingCards": "Chargement...", "noCards": "Aucune carte", "chooseDecks": "Choisir les Decks", "noMoreCards": "Plus de cartes", "noCardsIntensity": "Aucune carte pour cette intensité", "analyzingResponse": "Analyse en cours...", "wantInsights": "Plus de profondeur ?", "aiCanAnalyze": "L'IA peut analyser votre choix", "skip": "Passer", "getAiInsights": "Analyse IA", "nextCard": "Carte Suivante", "hostOnly": "Seul l'hôte peut avancer", "responseSubmitted": "Réponse soumise", "addedFavorites": "Ajouté aux favoris", "removedFavorites": "Retiré des favoris", "signInForInsights": "Connectez-vous pour l'analyse IA", "failedAnalysis": "Échec de l'analyse"
+  },
+  "session": {
+    "back": "← Retour", "createNew": "Nouvelle Session", "createNewDesc": "Démarrez une session et invitez votre partenaire", "createSession": "Créer", "creatingSession": "Création...", "or": "Ou", "joinExisting": "Rejoindre une Session", "joinExistingDesc": "Entrez le code à 6 caractères", "enterCode": "Code (ex., ABC123)", "joinSession": "Rejoindre", "invalidCode": "Code Invalide", "invalidCodeDesc": "Entrez un code à 6 caractères", "sessionNotFound": "Session non trouvée", "sessionNotFoundDesc": "Vérifiez le code", "failedJoin": "Échec de connexion", "failedLoadCards": "Échec du chargement"
+  },
+  "waitingRoom": {
+    "title": "Salle d'Attente", "shareCode": "Partagez ce code", "waitingHost": "En attente de l'hôte...", "sessionCode": "Code (Appuyez pour Partager)", "codeReady": "Code Prêt !", "sharePartner": "Partagez-le", "participants": "Participants ({{count}}/2)", "waitingPartner": "En attente...", "startGame": "Démarrer", "waitingForPartner": "En attente...", "cancel": "Annuler"
+  },
   "common": {
-    "error": "Erreur",
-    "loading": "Chargement...",
-    "save": "Enregistrer",
-    "close": "Fermer",
-    "confirm": "Confirmer",
-    "yes": "Oui",
-    "no": "Non"
+    "error": "Erreur", "loading": "Chargement...", "save": "Enregistrer", "close": "Fermer", "confirm": "Confirmer", "yes": "Oui", "no": "Non"
   }
 }
