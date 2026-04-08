@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/ui/card';
 import { Users, User } from 'lucide-react';
 
@@ -6,9 +7,11 @@ interface SessionModeSelectorProps {
 }
 
 const SessionModeSelector = ({ onSelect }: SessionModeSelectorProps) => {
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-center mb-6">Choose Play Mode</h2>
+      <h2 className="text-2xl font-bold text-center mb-6">{t('modes.choosePlayMode')}</h2>
       
       <Card 
         className="p-6 cursor-pointer hover:border-primary transition-all hover:shadow-lg"
@@ -19,8 +22,8 @@ const SessionModeSelector = ({ onSelect }: SessionModeSelectorProps) => {
             <User className="w-6 h-6 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-lg">Solo Play</h3>
-            <p className="text-sm text-muted-foreground">Play by yourself at your own pace</p>
+            <h3 className="font-semibold text-lg">{t('modes.solo')}</h3>
+            <p className="text-sm text-muted-foreground">{t('modes.soloDesc')}</p>
           </div>
         </div>
       </Card>
@@ -34,8 +37,8 @@ const SessionModeSelector = ({ onSelect }: SessionModeSelectorProps) => {
             <Users className="w-6 h-6 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-lg">Couples (One Device)</h3>
-            <p className="text-sm text-muted-foreground">Play together in person, sharing one device</p>
+            <h3 className="font-semibold text-lg">{t('modes.couplesLocal')}</h3>
+            <p className="text-sm text-muted-foreground">{t('modes.couplesLocalDesc')}</p>
           </div>
         </div>
       </Card>
@@ -49,8 +52,8 @@ const SessionModeSelector = ({ onSelect }: SessionModeSelectorProps) => {
             <Users className="w-6 h-6 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-lg">Couples (Two Devices)</h3>
-            <p className="text-sm text-muted-foreground">Play together in real-time on separate devices</p>
+            <h3 className="font-semibold text-lg">{t('modes.couplesRemote')}</h3>
+            <p className="text-sm text-muted-foreground">{t('modes.couplesRemoteDesc')}</p>
           </div>
         </div>
       </Card>

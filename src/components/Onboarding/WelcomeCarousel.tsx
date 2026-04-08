@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Heart, Flame, MessageCircle, Users, ChevronRight, Sparkles } from 'lucide-react';
 import ProgressIndicator from './ProgressIndicator';
@@ -8,45 +9,18 @@ interface WelcomeCarouselProps {
   onComplete: () => void;
 }
 
-const screens = [
-  {
-    icon: Heart,
-    title: "Welcome to Lovers' Quarrel",
-    subtitle: "The card game that brings you closer",
-    description: "Deep conversations, playful moments, and genuine connection through thoughtfully crafted prompts.",
-    accent: 'crimson'
-  },
-  {
-    icon: MessageCircle,
-    title: "Choose Your Mood",
-    subtitle: "Three unique decks to explore",
-    description: "From Freaky and flirty to Real Talk and Love Drunk - mix and match to set the perfect vibe.",
-    accent: 'purple'
-  },
-  {
-    icon: Flame,
-    title: "Set Your Heat Level",
-    subtitle: "You're always in control",
-    description: "Choose Soft, Standard, or Spicy intensity. Pass on any card at any time.",
-    accent: 'gold'
-  },
-  {
-    icon: Users,
-    title: "Play Your Way",
-    subtitle: "Together or apart",
-    description: "Perfect for solo play, in-person dates, or long-distance connections.",
-    accent: 'teal'
-  }
-];
+const screenKeys = ['welcome', 'mood', 'heat', 'playWay'] as const;
+const screenIcons = [Heart, MessageCircle, Flame, Users];
 
 const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
+  const { t } = useTranslation();
   const [currentScreen, setCurrentScreen] = useState(0);
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
   const [swipeOffset, setSwipeOffset] = useState(0);
 
   const handleNext = () => {
-    if (currentScreen < screens.length - 1) {
+    if (currentScreen < screenKeys.length - 1) {
       setCurrentScreen(prev => prev + 1);
     } else {
       onComplete();
@@ -86,12 +60,11 @@ const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
     touchEndX.current = 0;
   };
 
-  const screen = screens[currentScreen];
-  const Icon = screen.icon;
+  const key = screenKeys[currentScreen];
+  const Icon = screenIcons[currentScreen];
 
   return (
     <div className="min-h-screen bg-gradient-game flex items-center justify-center p-4 overflow-hidden">
-      {/* Animated background particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-crimson-vivid/5 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
@@ -103,12 +76,10 @@ const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Main card with glassmorphism */}
         <div 
           className="glass rounded-2xl p-8 space-y-8 shadow-elevated transition-transform duration-200 animate-scale-in"
           style={{ transform: `translateX(${swipeOffset * 0.3}px)` }}
         >
-          {/* Icon/Logo section */}
           <div className="relative">
             {currentScreen === 0 ? (
               <div className="relative">
@@ -129,36 +100,33 @@ const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
             )}
           </div>
 
-          {/* Content */}
           <div className="space-y-4 text-center">
             <h1 className="text-3xl md:text-4xl font-display text-glow-soft text-foreground">
-              {screen.title}
+              {t(`onboarding.${key}.title`)}
             </h1>
             <p className="text-lg font-semibold text-crimson-soft">
-              {screen.subtitle}
+              {t(`onboarding.${key}.subtitle`)}
             </p>
             <p className="text-muted-foreground font-card text-lg leading-relaxed">
-              {screen.description}
+              {t(`onboarding.${key}.description`)}
             </p>
           </div>
 
-          {/* Progress */}
-          <ProgressIndicator currentStep={currentScreen} totalSteps={screens.length} />
+          <ProgressIndicator currentStep={currentScreen} totalSteps={screenKeys.length} />
 
-          {/* Actions */}
           <div className="space-y-3">
             <Button
               onClick={handleNext}
               className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-crimson-vivid to-crimson-deep hover:from-crimson-glow hover:to-crimson-vivid transition-all duration-300 btn-glow group"
             >
-              {currentScreen < screens.length - 1 ? (
+              {currentScreen < screenKeys.length - 1 ? (
                 <>
-                  Continue
+                  {t('onboarding.continue')}
                   <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </>
               ) : (
                 <>
-                  Let's Begin
+                  {t('onboarding.letsBegin')}
                   <Sparkles className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
                 </>
               )}
@@ -170,20 +138,19 @@ const WelcomeCarousel = ({ onComplete }: WelcomeCarouselProps) => {
                 onClick={handlePrevious}
                 className="w-full text-muted-foreground hover:text-foreground"
               >
-                Back
+                {t('onboarding.back')}
               </Button>
             )}
           </div>
         </div>
         
-        {/* Skip button - now properly positioned within padded container */}
-        {currentScreen < screens.length - 1 && (
+        {currentScreen < screenKeys.length - 1 && (
           <Button
             variant="ghost"
             onClick={onComplete}
             className="absolute bottom-0 left-1/2 -translate-x-1/2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Skip intro
+            {t('onboarding.skipIntro')}
           </Button>
         )}
       </div>

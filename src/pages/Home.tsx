@@ -1,5 +1,6 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Play, Settings, Heart, Sparkles, LogIn, User, Check, ChevronRight, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,7 @@ const Home = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const { subscribed, loading, checkSubscription } = useSubscription();
 
@@ -26,15 +28,15 @@ const Home = () => {
 
     if (searchParams.get('success') === 'true') {
       toast({
-        title: 'Welcome to Premium!',
-        description: 'Your subscription is now active. Enjoy all premium features!'
+        title: t('home.welcomePremium'),
+        description: t('home.premiumActive')
       });
       checkSubscription();
       window.history.replaceState({}, '', '/home');
     }
 
     return () => subscription.unsubscribe();
-  }, [searchParams, toast, checkSubscription]);
+  }, [searchParams, toast, checkSubscription, t]);
 
   return (
     <div className="min-h-screen bg-gradient-game p-4 flex flex-col">
@@ -65,7 +67,7 @@ const Home = () => {
             className="w-44 h-auto mx-auto mb-4 logo-glow float"
           />
           <p className="font-card text-xl text-muted-foreground">
-            Choose your mood. Draw your truth.
+            {t('home.tagline')}
           </p>
         </div>
 
@@ -76,18 +78,13 @@ const Home = () => {
             onClick={() => navigate('/decks')}
             className="relative group h-24 rounded-2xl overflow-hidden transition-all duration-300 hover-lift"
           >
-            {/* Animated gradient background */}
             <div className="absolute inset-0 bg-gradient-to-r from-crimson-vivid via-crimson-deep to-crimson-vivid bg-[length:200%_100%] group-hover:animate-[shimmer_2s_linear_infinite]" />
-            
-            {/* Glow effect */}
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <div className="absolute inset-0 bg-crimson-glow/20 blur-xl" />
             </div>
-            
-            {/* Content */}
             <div className="relative h-full flex items-center justify-center gap-4">
               <Play className="w-8 h-8 text-white group-hover:scale-110 transition-transform" fill="currentColor" />
-              <span className="font-display text-3xl text-white">Play Now</span>
+              <span className="font-display text-3xl text-white">{t('home.playNow')}</span>
               <ChevronRight className="w-6 h-6 text-white/70 group-hover:translate-x-1 transition-transform" />
             </div>
           </button>
@@ -101,8 +98,8 @@ const Home = () => {
               <div className="w-10 h-10 rounded-xl bg-crimson-vivid/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <Heart className="w-5 h-5 text-crimson-glow" />
               </div>
-              <h3 className="font-display text-sm sm:text-base text-foreground mb-0.5">Favorites</h3>
-              <p className="text-xs text-muted-foreground">Saved cards</p>
+              <h3 className="font-display text-sm sm:text-base text-foreground mb-0.5">{t('home.favorites')}</h3>
+              <p className="text-xs text-muted-foreground">{t('home.savedCards')}</p>
             </button>
 
             <button
@@ -112,8 +109,8 @@ const Home = () => {
               <div className="w-10 h-10 rounded-xl bg-crimson-vivid/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <Users className="w-5 h-5 text-crimson-glow" />
               </div>
-              <h3 className="font-display text-sm sm:text-base text-foreground mb-0.5">Friends</h3>
-              <p className="text-xs text-muted-foreground">Your circle</p>
+              <h3 className="font-display text-sm sm:text-base text-foreground mb-0.5">{t('home.friends')}</h3>
+              <p className="text-xs text-muted-foreground">{t('home.yourCircle')}</p>
             </button>
 
             <button
@@ -123,16 +120,14 @@ const Home = () => {
               <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <Settings className="w-5 h-5 text-muted-foreground" />
               </div>
-              <h3 className="font-display text-sm sm:text-base text-foreground mb-0.5">Settings</h3>
-              <p className="text-xs text-muted-foreground">Preferences</p>
+              <h3 className="font-display text-sm sm:text-base text-foreground mb-0.5">{t('home.settings')}</h3>
+              <p className="text-xs text-muted-foreground">{t('home.preferences')}</p>
             </button>
           </div>
 
           {/* AI Add-on Card */}
           <div className="relative glass rounded-xl border border-crimson-vivid/30 overflow-hidden">
-            {/* Shimmer effect */}
             <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-crimson-glow/50 to-transparent shimmer" />
-            
             <div className="p-6">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-crimson-vivid/30 to-purple/20 flex items-center justify-center flex-shrink-0">
@@ -141,17 +136,17 @@ const Home = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <h3 className="font-display text-xl text-foreground">
-                      AI Insights
+                      {t('home.aiInsights')}
                     </h3>
                     {subscribed && (
                       <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
                         <Check className="w-3.5 h-3.5" />
-                        Active
+                        {t('home.active')}
                       </div>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Deep psychological insights powered by AI. Understand your choices and deepen your connection.
+                    {t('home.aiInsightsDesc')}
                   </p>
                   {!subscribed && (
                     <Button
@@ -160,7 +155,7 @@ const Home = () => {
                       size="sm"
                       className="border-crimson-vivid/50 text-crimson-glow hover:bg-crimson-vivid/10 hover:text-crimson-soft"
                     >
-                      View Plans
+                      {t('home.viewPlans')}
                       <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   )}
@@ -173,7 +168,7 @@ const Home = () => {
         {/* Footer */}
         <div className="py-6 text-center">
           <p className="text-xs text-muted-foreground font-ui">
-            18+ only • Play responsibly • Respect boundaries
+            {t('home.footer')}
           </p>
         </div>
       </div>
